@@ -1,23 +1,88 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router';
-import { 
-  FaHome, 
-  FaPlusCircle, 
-  FaBriefcase, 
-  FaUser, 
-  FaSignOutAlt,
-  FaBars,
-  FaArrowUp,
-  FaArrowDown
-} from 'react-icons/fa';
 import axios from 'axios';
 import { APP_URL } from '../../../lib/Constant';
-import './RecruiterDashboard.css';
+import {
+  Box,
+  Drawer,
+  AppBar,
+  Toolbar,
+  Typography,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  IconButton,
+  Button,
+  useTheme,
+  useMediaQuery,
+  Divider,
+  Avatar,
+  Badge,
+} from '@mui/material';
+import {
+  Menu as MenuIcon,
+  Home as HomeIcon,
+  AddCircle as AddCircleIcon,
+  Work as WorkIcon,
+  Person as PersonIcon,
+  Logout as LogoutIcon,
+  Notifications as NotificationsIcon,
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+
+const drawerWidth = 240;
+
+const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
+  ({ theme, open }) => ({
+    flexGrow: 1,
+    padding: theme.spacing(3),
+    transition: theme.transitions.create('margin', {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen,
+    }),
+    marginLeft: `-${drawerWidth}px`,
+    ...(open && {
+      transition: theme.transitions.create('margin', {
+        easing: theme.transitions.easing.easeOut,
+        duration: theme.transitions.duration.enteringScreen,
+      }),
+      marginLeft: 0,
+    }),
+  }),
+);
+
+const AppBarStyled = styled(AppBar, {
+  shouldForwardProp: (prop) => prop !== 'open',
+})(({ theme, open }) => ({
+  transition: theme.transitions.create(['margin', 'width'], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  ...(open && {
+    width: `calc(100% - ${drawerWidth}px)`,
+    marginLeft: `${drawerWidth}px`,
+    transition: theme.transitions.create(['margin', 'width'], {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  }),
+}));
+
+const DrawerHeader = styled('div')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  padding: theme.spacing(0, 1),
+  ...theme.mixins.toolbar,
+  justifyContent: 'flex-end',
+}));
 
 const RecruiterDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [open, setOpen] = useState(!isMobile);
   const [recruiter, setRecruiter] = useState(null);
 
   useEffect(() => {
@@ -41,6 +106,10 @@ const RecruiterDashboard = () => {
     fetchRecruiterData();
   }, []);
 
+  const handleDrawerToggle = () => {
+    setOpen(!open);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/recruiter-auth');
@@ -48,95 +117,122 @@ const RecruiterDashboard = () => {
 
   const isActivePath = (path) => {
     if (path === 'dashboard') {
-      // Exact match for dashboard
       return location.pathname === '/recruiter-dashboard';
     }
-    // For other paths, keep using includes
     return location.pathname.includes(path);
   };
 
+  const menuItems = [
+    { text: 'Dashboard', icon: <HomeIcon />, path: '/' },
+    { text: 'Create Job', icon: <AddCircleIcon />, path: 'create-new-job' },
+    { text: 'View Jobs', icon: <WorkIcon />, path: 'all-jobs' },
+    { text: 'View Profile', icon: <PersonIcon />, path: 'profile' },
+  ];
+
   return (
-    <>
-      <button 
-        className="mobile-menu-toggle" 
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
+    <Box sx={{ display: 'flex' }}>
+      <AppBarStyled position="fixed" open={open}>
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            onClick={handleDrawerToggle}
+            edge="start"
+            sx={{ mr: 2, ...(open && { display: 'none' }) }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+            Aspire Match
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <IconButton color="inherit">
+              <Badge badgeContent={4} color="error">
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
+            <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
+              {recruiter?.name?.charAt(0) || 'R'}
+            </Avatar>
+          </Box>
+        </Toolbar>
+      </AppBarStyled>
+
+      <Drawer
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: drawerWidth,
+            boxSizing: 'border-box',
+          },
+        }}
+        variant={isMobile ? 'temporary' : 'persistent'}
+        anchor="left"
+        open={open}
+        onClose={handleDrawerToggle}
       >
-        <FaBars />
-      </button>
-
-      <div className="dashboard">
-        <aside className={`sidebar ${isMenuOpen ? 'active' : ''}`}>
-          <div className="logo">Aspire Match</div>
-          
-          <nav className="menu">
-            <button 
-              className={`menu-item ${isActivePath('dashboard') ? "not-active" : ''}`}
+        <DrawerHeader>
+          <IconButton onClick={handleDrawerToggle}>
+            {theme.direction === 'ltr' ? <MenuIcon /> : <MenuIcon />}
+          </IconButton>
+        </DrawerHeader>
+        <Divider />
+        <List>
+          {menuItems.map((item) => (
+            <ListItem
+              button
+              key={item.text}
               onClick={() => {
-                navigate('/recruiter-dashboard');
-                setIsMenuOpen(false);
+                navigate(`/recruiter-dashboard/${item.path}`);
+                if (isMobile) setOpen(false);
+              }}
+              selected={isActivePath(item.path)}
+              sx={{
+                '&.Mui-selected': {
+                  backgroundColor: theme.palette.primary.light,
+                  '&:hover': {
+                    backgroundColor: theme.palette.primary.light,
+                  },
+                },
               }}
             >
-              <FaHome />
-              Dashboard
-            </button>
+              <ListItemIcon sx={{ color: isActivePath(item.path) ? theme.palette.primary.main : 'inherit' }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItem>
+          ))}
+        </List>
+        <Divider />
+        <Box sx={{ p: 2, mt: 'auto' }}>
+          <Button
+            fullWidth
+            variant="contained"
+            color="error"
+            startIcon={<LogoutIcon />}
+            onClick={handleLogout}
+          >
+            Logout
+          </Button>
+        </Box>
+      </Drawer>
 
-            <button 
-              className={`menu-item ${isActivePath('create-new-job') ? 'active' : ''}`}
-              onClick={() => {
-                navigate('/recruiter-dashboard/create-new-job');
-                setIsMenuOpen(false);
-              }}
-            >
-              <FaPlusCircle />
-              Create Job
-            </button>
-
-            <button 
-              className={`menu-item ${isActivePath('all-jobs') ? 'active' : ''}`}
-              onClick={() => {
-                navigate('/recruiter-dashboard/all-jobs');
-                setIsMenuOpen(false);
-              }}
-            >
-              <FaBriefcase />
-              View Jobs
-            </button>
-
-            <button 
-              className={`menu-item ${isActivePath('profile') ? 'active' : ''}`}
-              onClick={() => {
-                navigate('/recruiter-dashboard/profile');
-                setIsMenuOpen(false);
-              }}
-            >
-              <FaUser />
-              View Profile
-            </button>
-          </nav>
-
-          <div className="logout">
-            <button className="logout-btn" onClick={handleLogout}>
-              <FaSignOutAlt />
-              Logout
-            </button>
-          </div>
-        </aside>
-
-        <main className="main-content">
-          <div className="dashboard-header">
-            <h1 className="welcome-message">
-              Welcome back, {recruiter?.name || 'Recruiter'}! 👋
-            </h1>
-            <p className="company-info">
-              {recruiter?.companyName && `${recruiter.companyName}`}
-            </p>
-          </div>
-          <div className="dashboard-content">
-            <Outlet />
-          </div>
-        </main>
-      </div>
-    </>
+      <Main open={open}>
+        <DrawerHeader />
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h4" gutterBottom>
+            Welcome back, {recruiter?.name || 'Recruiter'}! 👋
+          </Typography>
+          {recruiter?.companyName && (
+            <Typography variant="subtitle1" color="text.secondary">
+              {recruiter.companyName}
+            </Typography>
+          )}
+        </Box>
+        <Outlet />
+      </Main>
+    </Box>
   );
 };
 

@@ -1,92 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router';
-import { FaEnvelope, FaEye } from 'react-icons/fa';
 import axios from 'axios';
 import { APP_URL } from '../../../lib/Constant';
-import './Applications.css';
+import {
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Chip,
+  CircularProgress,
+  Alert,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import {
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  Comment as CommentIcon,
+  Send as SendIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  AccessTime as AccessTimeIcon,
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
 
-// Add MessageModal component
-const MessageModal = ({ isOpen, onClose, selectedApplicants, onSend }) => {
-  const [message, setMessage] = useState('');
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  '&:nth-of-type(odd)': {
+    backgroundColor: theme.palette.action.hover,
+  },
+  '&:last-child td, &:last-child th': {
+    border: 0,
+  },
+}));
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSend(message);
-    setMessage('');
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>Send Message to Applicants</h2>
-        <p>{selectedApplicants.length} applicant(s) selected</p>
-        <form onSubmit={handleSubmit}>
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type your message here..."
-            rows="4"
-            required
-          />
-          <div className="modal-actions">
-            <button type="button" onClick={onClose} className="cancel-btn">
-              Cancel
-            </button>
-            <button type="submit" className="send-btn">
-              Send Message
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// Add ViewApplicationModal component
-const ViewApplicationModal = ({ application, isOpen, onClose }) => {
-  if (!isOpen || !application) return null;
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>Application Details</h2>
-        <div className="application-details">
-          <div className="detail-group">
-            <label>Applicant Name</label>
-            <p>{application.applicant?.name}</p>
-          </div>
-          <div className="detail-group">
-            <label>Email</label>
-            <p>{application.applicant?.email}</p>
-          </div>
-          <div className="detail-group">
-            <label>Phone</label>
-            <p>{application.applicant?.phoneNumber}</p>
-          </div>
-          <div className="detail-group">
-            <label>Cover Letter</label>
-            <p className="cover-letter">{application.coverLetter}</p>
-          </div>
-          <div className="detail-group">
-            <label>Status</label>
-            <p className={`status ${application.status}`}>{application.status}</p>
-          </div>
-          <div className="detail-group">
-            <label>Applied Date</label>
-            <p>{new Date(application.createdAt).toLocaleDateString()}</p>
-          </div>
-        </div>
-        <div className="modal-actions">
-          <button onClick={onClose} className="close-btn">
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+const StatusChip = styled(Chip)(({ theme, status }) => ({
+  backgroundColor: status === 'pending' ? theme.palette.warning.light :
+    status === 'accepted' ? theme.palette.success.light :
+    status === 'rejected' ? theme.palette.error.light :
+    theme.palette.info.light,
+  color: theme.palette.common.white,
+}));
 
 const Applications = () => {
   const { jobId } = useParams();
@@ -94,15 +63,16 @@ const Applications = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(null);
-  const [selectedApplications, setSelectedApplications] = useState([]);
+  const [selectedApplication, setSelectedApplication] = useState(null);
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [comment, setComment] = useState('');
   const [filters, setFilters] = useState({
     search: '',
     status: '',
     experience: ''
   });
-  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [selectedApplication, setSelectedApplication] = useState(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     fetchApplications();
@@ -110,19 +80,39 @@ const Applications = () => {
 
   const fetchApplications = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${APP_URL}/jobseekers/job/${jobId}/applications`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        params: filters
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+
+      console.log('Fetching applications for job:', jobId); // Debug log
+      const response = await axios.get(`${APP_URL}/jobs/${jobId}/applications`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
-      if (response.data && Array.isArray(response.data.applications)) {
+      console.log('Response data:', response.data); // Debug log
+      
+      if (response.data && response.data.applications) {
+        console.log('Applications found:', response.data.applications.length); // Debug log
         setApplications(response.data.applications);
+      } else if (response.data && response.data.count === 0) {
+        console.log('No applications found for this job'); // Debug log
+        setApplications([]);
       } else {
-        setError('Invalid response format from server');
+        console.log('Unexpected response format:', response.data); // Debug log
+        setApplications([]);
       }
+      setError('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch applications');
+      console.error('Error fetching applications:', err);
+      console.error('Error response:', err.response); // Debug log
+      console.error('Error message:', err.message); // Debug log
+      setError(err.response?.data?.message || 'Failed to fetch applications. Please try again.');
+      setApplications([]);
     } finally {
       setLoading(false);
     }
@@ -132,44 +122,44 @@ const Applications = () => {
     setUpdatingStatus(applicationId);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.patch(
-        `${APP_URL}/jobseekers/applications/${applicationId}/status`,
+      await axios.patch(
+        `${APP_URL}/jobs/${jobId}/applications/${applicationId}/status`,
         { status: newStatus },
         {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         }
       );
-      
-      if (response.data.application) {
-        setApplications(prev =>
-          prev.map(app =>
-            app._id === applicationId ? response.data.application : app
-          )
-        );
-      }
+      fetchApplications();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update application status');
+      setError(err.response?.data?.message || 'Failed to update status');
     } finally {
       setUpdatingStatus(null);
     }
   };
 
-  const handleBulkStatusChange = async (newStatus) => {
+  const handleCommentSubmit = async () => {
+    if (!selectedApplication || !comment.trim()) return;
+
     try {
       const token = localStorage.getItem('token');
-      await Promise.all(
-        selectedApplications.map(appId =>
-          axios.patch(
-            `${APP_URL}/jobseekers/applications/${appId}/status`,
-            { status: newStatus },
-            { headers: { 'Authorization': `Bearer ${token}` } }
-          )
-        )
+      await axios.post(
+        `${APP_URL}/jobs/${jobId}/applications/${selectedApplication._id}/comment`,
+        { comment: comment.trim() },
+        {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
       );
+      setComment('');
+      setCommentDialogOpen(false);
       fetchApplications();
-      setSelectedApplications([]);
     } catch (err) {
-      setError('Failed to update statuses');
+      setError(err.response?.data?.message || 'Failed to send comment');
     }
   };
 
@@ -178,212 +168,166 @@ const Applications = () => {
     setFilters(prev => ({ ...prev, [name]: value }));
   };
 
-  const toggleSelectApplication = (applicationId) => {
-    setSelectedApplications(prev =>
-      prev.includes(applicationId)
-        ? prev.filter(id => id !== applicationId)
-        : [...prev, applicationId]
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
     );
-  };
-
-  const toggleSelectAll = () => {
-    setSelectedApplications(prev =>
-      prev.length === applications.length ? [] : applications.map(app => app._id)
-    );
-  };
-
-  // Add sendMessage function
-  const sendMessage = async (message) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${APP_URL}/applications/message`,
-        {
-          applicationIds: selectedApplications,
-          message
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-      
-      // Show success message
-      alert('Message sent successfully');
-      setIsMessageModalOpen(false);
-      setSelectedApplications([]);
-    } catch (err) {
-      console.error('Error sending message:', err);
-      setError(err.response?.data?.message || 'Failed to send message');
-    }
-  };
-
-  // Add viewApplication function
-  const viewApplication = (application) => {
-    setSelectedApplication(application);
-    setIsViewModalOpen(true);
-  };
-
-  if (loading) return <div className="loading">Loading applications...</div>;
-  if (error) return <div className="error-message">{error}</div>;
+  }
 
   return (
-    <div className="applications-page">
-      <div className="header">
-        <h1>Applications</h1>
-      </div>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Typography variant="h4" gutterBottom>
+        Job Applications
+      </Typography>
 
-      <div className="filters-section">
-        <div className="search-filters">
-          <div className="filter-group">
-            <label htmlFor="search">Search</label>
-            <input
-              type="text"
-              id="search"
-              name="search"
-              placeholder="Search by name or email..."
-              value={filters.search}
-              onChange={handleFilterChange}
-            />
-          </div>
-          <div className="filter-group">
-            <label htmlFor="status">Status</label>
-            <select
-              id="status"
-              name="status"
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <TextField
+            size="small"
+            placeholder="Search applicants..."
+            value={filters.search}
+            onChange={handleFilterChange}
+            name="search"
+            InputProps={{
+              startAdornment: <SearchIcon />,
+            }}
+          />
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Status</InputLabel>
+            <Select
               value={filters.status}
               onChange={handleFilterChange}
+              name="status"
+              label="Status"
             >
-              <option value="">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="reviewing">Reviewing</option>
-              <option value="shortlisted">Shortlisted</option>
-              <option value="rejected">Rejected</option>
-              <option value="hired">Hired</option>
-            </select>
-          </div>
-        </div>
-
-        {selectedApplications.length > 0 && (
-          <div className="bulk-actions">
-            <button
-              className="message-btn"
-              onClick={() => setIsMessageModalOpen(true)}
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="accepted">Accepted</MenuItem>
+              <MenuItem value="rejected">Rejected</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Experience</InputLabel>
+            <Select
+              value={filters.experience}
+              onChange={handleFilterChange}
+              name="experience"
+              label="Experience"
             >
-              <FaEnvelope /> Message Selected ({selectedApplications.length})
-            </button>
-            <select
-              onChange={(e) => handleBulkStatusChange(e.target.value)}
-              defaultValue=""
-            >
-              <option value="" disabled>Change Status</option>
-              <option value="reviewing">Mark as Reviewing</option>
-              <option value="shortlisted">Mark as Shortlisted</option>
-              <option value="rejected">Mark as Rejected</option>
-              <option value="hired">Mark as Hired</option>
-            </select>
-            <span>{selectedApplications.length} selected</span>
-          </div>
-        )}
-      </div>
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="0-2">0-2 years</MenuItem>
+              <MenuItem value="2-5">2-5 years</MenuItem>
+              <MenuItem value="5+">5+ years</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      </Paper>
 
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  checked={selectedApplications.length === applications.length}
-                  onChange={toggleSelectAll}
-                />
-              </th>
-              <th>Applicant</th>
-              <th>Email</th>
-              <th>Applied Date</th>
-              <th>Status</th>
-              <th>Resume</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {applications.map(application => (
-              <tr key={application._id}>
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={selectedApplications.includes(application._id)}
-                    onChange={() => toggleSelectApplication(application._id)}
-                  />
-                </td>
-                <td>{application.applicant?.name || 'Unnamed'}</td>
-                <td>{application.applicant?.email}</td>
-                <td>{new Date(application.createdAt).toLocaleDateString()}</td>
-                <td>
-                  <select
-                    value={application.status || 'pending'}
-                    onChange={(e) => handleStatusChange(application._id, e.target.value)}
-                    className={`status-select ${application.status?.toLowerCase() || 'pending'}`}
-                    disabled={updatingStatus === application._id}
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="reviewing">Reviewing</option>
-                    <option value="shortlisted">Shortlisted</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="hired">Hired</option>
-                  </select>
-                </td>
-                <td>
-                  {application.resume && (
-                    <a
-                      href={application.resume}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="view-resume-btn"
-                    >
-                      View Resume
-                    </a>
-                  )}
-                </td>
-                <td>
-                  <div className="actions">
-                    <button 
-                      className="action-btn view-btn"
-                      onClick={() => viewApplication(application)}
-                      title="View Details"
-                    >
-                      <FaEye />
-                    </button>
-                    <button
-                      className="action-btn message-btn"
-                      onClick={() => {
-                        setSelectedApplications([application._id]);
-                        setIsMessageModalOpen(true);
-                      }}
-                      title="Send Message"
-                    >
-                      <FaEnvelope />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Applicant</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Experience</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Applied Date</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {applications.length > 0 ? (
+              applications.map((application) => (
+                <StyledTableRow key={application._id}>
+                  <TableCell>{application.applicant?.name || 'N/A'}</TableCell>
+                  <TableCell>{application.applicant?.email || 'N/A'}</TableCell>
+                  <TableCell>{application.applicant?.experience || 'N/A'} years</TableCell>
+                  <TableCell>
+                    <StatusChip
+                      label={application.status}
+                      status={application.status}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {new Date(application.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          setSelectedApplication(application);
+                          setCommentDialogOpen(true);
+                        }}
+                      >
+                        <CommentIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        color="success"
+                        onClick={() => handleStatusChange(application._id, 'accepted')}
+                        disabled={updatingStatus === application._id}
+                      >
+                        <CheckCircleIcon />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleStatusChange(application._id, 'rejected')}
+                        disabled={updatingStatus === application._id}
+                      >
+                        <CancelIcon />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                </StyledTableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} align="center">
+                  No applications found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-      <MessageModal
-        isOpen={isMessageModalOpen}
-        onClose={() => setIsMessageModalOpen(false)}
-        selectedApplicants={selectedApplications}
-        onSend={sendMessage}
-      />
-
-      <ViewApplicationModal
-        isOpen={isViewModalOpen}
-        onClose={() => setIsViewModalOpen(false)}
-        application={selectedApplication}
-      />
-    </div>
+      <Dialog open={commentDialogOpen} onClose={() => setCommentDialogOpen(false)}>
+        <DialogTitle>Send Comment to Applicant</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Comment"
+            fullWidth
+            multiline
+            rows={4}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCommentDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleCommentSubmit}
+            variant="contained"
+            startIcon={<SendIcon />}
+            disabled={!comment.trim()}
+          >
+            Send
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

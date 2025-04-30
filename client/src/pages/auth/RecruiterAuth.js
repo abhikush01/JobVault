@@ -1,12 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import axios from 'axios';
-import './Auth.css';
 import { APP_URL } from '../../lib/Constant';
+import {
+  Container,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Box,
+  Stepper,
+  Step,
+  StepLabel,
+  Alert,
+  CircularProgress,
+  InputAdornment,
+  IconButton,
+  useTheme,
+  useMediaQuery,
+  Grid,
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+
+const AuthContainer = styled(Container)(({ theme }) => ({
+  minHeight: '100vh',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: theme.spacing(4),
+}));
+
+const AuthPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  width: '100%',
+  maxWidth: 600,
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(3),
+  },
+}));
 
 const RecruiterAuth = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [step, setStep] = useState(1);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -25,24 +65,18 @@ const RecruiterAuth = () => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          // Verify token with backend
           const response = await axios.get(`${APP_URL}/auth/verify`, {
             headers: {
-              'Authorization': `Bearer ${token}`  // Make sure to add 'Bearer ' prefix
+              'Authorization': `Bearer ${token}`
             }
           });
           
-          // If token is valid and user is a recruiter
           if (response.data.valid && response.data.role === 'recruiter') {
             navigate('/recruiter-dashboard');
-            return;
           } else {
-            // If token is valid but not a recruiter, remove it
             localStorage.removeItem('token');
           }
         } catch (err) {
-          // If token is invalid, remove it
-          console.error('Auth check error:', err);
           localStorage.removeItem('token');
         }
       }
@@ -113,199 +147,241 @@ const RecruiterAuth = () => {
 
   if (loading && !formData.email) {
     return (
-      <div className="auth-container">
-        <div className="container">
-          <div className="auth-box">
-            <h2>Loading...</h2>
-          </div>
-        </div>
-      </div>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
     );
   }
 
   return (
-    <div className="auth-container">
-      <div className="container">
-        <div className="left-section">
-          <div className="logo">Aspire Match</div>
-          <h1 className="headline">Build your <span>dream team</span></h1>
-          <p className="subheadline">1-stop solution to hire best talent for your business.</p>
-          
-          <div className="trusted-section">
-            <p className="trusted-text">Trusted by 10+ global brands</p>
-            <div className="brand-logos">
-              <img src="/company1.png" alt="Company 1" />
-              <img src="/company2.png" alt="Company 2" />
-              <img src="/company3.png" alt="Company 3" />
-              <img src="/company4.png" alt="Company 4" />
-            </div>
-          </div>
-        </div>
+    <AuthContainer>
+      <Grid container spacing={4} alignItems="center">
+        <Grid item xs={12} md={6}>
+          <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
+            <Typography variant="h3" gutterBottom>
+              Build your <span style={{ color: theme.palette.primary.main }}>dream team</span>
+            </Typography>
+            <Typography variant="h6" color="text.secondary" paragraph>
+              1-stop solution to hire best talent for your business.
+            </Typography>
+            <Box sx={{ mt: 4 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Trusted by 10+ global brands
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, mt: 2, justifyContent: { xs: 'center', md: 'flex-start' } }}>
+                <img src="/company1.png" alt="Company 1" style={{ height: 40 }} />
+                <img src="/company2.png" alt="Company 2" style={{ height: 40 }} />
+                <img src="/company3.png" alt="Company 3" style={{ height: 40 }} />
+                <img src="/company4.png" alt="Company 4" style={{ height: 40 }} />
+              </Box>
+            </Box>
+          </Box>
+        </Grid>
 
-        <div className="auth-box">
-          <h2>{step === 3 ? 'Welcome Back!' : 'Create Account'}</h2>
-          
-          {error && <div className="error-message">{error}</div>}
+        <Grid item xs={12} md={6}>
+          <AuthPaper elevation={3}>
+            <Box textAlign="center" mb={4}>
+              <Typography variant="h4" gutterBottom>
+                {step === 3 ? 'Welcome Back!' : 'Create Account'}
+              </Typography>
+            </Box>
 
-          {step === 1 && (
-            <form onSubmit={handleInitialSignup}>
-              <div className="form-group">
-                <label htmlFor="email">Work Email</label>
-                <input
-                  type="email"
-                  id="email"
+            {error && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {error}
+              </Alert>
+            )}
+
+            {step === 1 && (
+              <form onSubmit={handleInitialSignup}>
+                <TextField
+                  fullWidth
+                  label="Work Email"
                   name="email"
-                  placeholder="Enter your work email"
+                  type="email"
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  margin="normal"
                 />
-              </div>
-              <div className="form-group">
-                <label htmlFor="password">Password</label>
-                <input
-                  type="password"
-                  id="password"
+                <TextField
+                  fullWidth
+                  label="Password"
                   name="password"
-                  placeholder="Enter your password"
+                  type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={handleChange}
                   required
+                  margin="normal"
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
-              </div>
-              <button type="submit" disabled={loading}>
-                {loading ? 'Loading...' : 'Sign Up'}
-              </button>
-              <div className="signup-section">
-                <p>
-                  Already have an account?{' '}
-                  <a href="#" onClick={(e) => { e.preventDefault(); setStep(3); }}>
-                    Sign in
-                  </a>
-                </p>
-              </div>
-            </form>
-          )}
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  type="submit"
+                  disabled={loading}
+                  sx={{ mt: 3 }}
+                >
+                  {loading ? 'Loading...' : 'Sign Up'}
+                </Button>
+                <Box textAlign="center" mt={2}>
+                  <Typography variant="body2">
+                    Already have an account?{' '}
+                    <Button
+                      color="primary"
+                      onClick={() => setStep(3)}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Sign in
+                    </Button>
+                  </Typography>
+                </Box>
+              </form>
+            )}
 
-          {step === 2 && (
-            <form onSubmit={handleVerifyAndComplete}>
-              <div className="form-group">
-                <label htmlFor="otp">Enter OTP</label>
-                <input
-                  type="text"
-                  id="otp"
+            {step === 2 && (
+              <form onSubmit={handleVerifyAndComplete}>
+                <TextField
+                  fullWidth
+                  label="OTP"
                   name="otp"
                   value={formData.otp}
                   onChange={handleChange}
                   required
+                  margin="normal"
                 />
-              </div>
-              <div className="form-group">
-                <label htmlFor="name">Full Name</label>
-                <input
-                  type="text"
-                  id="name"
+                <TextField
+                  fullWidth
+                  label="Full Name"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
                   required
+                  margin="normal"
                 />
-              </div>
-              <div className="form-group">
-                <label htmlFor="phoneNumber">Phone Number</label>
-                <input
-                  type="text"
-                  id="phoneNumber"
+                <TextField
+                  fullWidth
+                  label="Phone Number"
                   name="phoneNumber"
                   value={formData.phoneNumber}
                   onChange={handleChange}
                   required
+                  margin="normal"
                 />
-              </div>
-              <div className="form-group">
-                <label htmlFor="designation">Designation</label>
-                <input
-                  type="text"
-                  id="designation"
+                <TextField
+                  fullWidth
+                  label="Designation"
                   name="designation"
                   value={formData.designation}
                   onChange={handleChange}
                   required
+                  margin="normal"
                 />
-              </div>
-              <div className="form-group">
-                <label htmlFor="companyName">Company Name</label>
-                <input
-                  type="text"
-                  id="companyName"
+                <TextField
+                  fullWidth
+                  label="Company Name"
                   name="companyName"
                   value={formData.companyName}
                   onChange={handleChange}
                   required
+                  margin="normal"
                 />
-              </div>
-              <div className="form-group">
-                <label htmlFor="companyWebsite">Company Website</label>
-                <input
-                  type="text"
-                  id="companyWebsite"
+                <TextField
+                  fullWidth
+                  label="Company Website"
                   name="companyWebsite"
                   value={formData.companyWebsite}
                   onChange={handleChange}
                   required
+                  margin="normal"
                 />
-              </div>
-              <button type="submit" disabled={loading}>
-                {loading ? 'Loading...' : 'Complete Profile'}
-              </button>
-            </form>
-          )}
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  type="submit"
+                  disabled={loading}
+                  sx={{ mt: 3 }}
+                >
+                  {loading ? 'Loading...' : 'Complete Profile'}
+                </Button>
+              </form>
+            )}
 
-          {step === 3 && (
-            <form onSubmit={handleLogin}>
-              <div className="form-group">
-                <label htmlFor="email">Work Email</label>
-                <input
-                  type="email"
-                  id="email"
+            {step === 3 && (
+              <form onSubmit={handleLogin}>
+                <TextField
+                  fullWidth
+                  label="Work Email"
                   name="email"
-                  placeholder="Enter your work email"
+                  type="email"
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  margin="normal"
                 />
-              </div>
-              <div className="form-group">
-                <label htmlFor="password">Password</label>
-                <input
-                  type="password"
-                  id="password"
+                <TextField
+                  fullWidth
+                  label="Password"
                   name="password"
-                  placeholder="Enter your password"
+                  type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={handleChange}
                   required
+                  margin="normal"
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
-              </div>
-              <button type="submit" disabled={loading}>
-                {loading ? 'Loading...' : 'Sign in'}
-              </button>
-              <div className="forgot-password">
-                <a href="#">Forgot Password?</a>
-              </div>
-              <div className="signup-section">
-                <p>
-                  Don't have an account?{' '}
-                  <a href="#" onClick={(e) => { e.preventDefault(); setStep(1); }}>
-                    Sign up
-                  </a>
-                </p>
-              </div>
-            </form>
-          )}
-        </div>
-      </div>
-    </div>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  type="submit"
+                  disabled={loading}
+                  sx={{ mt: 3 }}
+                >
+                  {loading ? 'Loading...' : 'Sign in'}
+                </Button>
+                <Box textAlign="center" mt={2}>
+                  <Typography variant="body2">
+                    Don't have an account?{' '}
+                    <Button
+                      color="primary"
+                      onClick={() => setStep(1)}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Sign up
+                    </Button>
+                  </Typography>
+                </Box>
+              </form>
+            )}
+          </AuthPaper>
+        </Grid>
+      </Grid>
+    </AuthContainer>
   );
 };
 

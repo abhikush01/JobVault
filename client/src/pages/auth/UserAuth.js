@@ -1,12 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import axios from 'axios';
-import './Auth.css';
 import { APP_URL } from '../../lib/Constant';
+import {
+  Container,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Box,
+  Stepper,
+  Step,
+  StepLabel,
+  Alert,
+  CircularProgress,
+  InputAdornment,
+  IconButton,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import { styled } from '@mui/material/styles';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+
+const AuthContainer = styled(Container)(({ theme }) => ({
+  minHeight: '100vh',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: theme.spacing(4),
+}));
+
+const AuthPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  width: '100%',
+  maxWidth: 600,
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(3),
+  },
+}));
 
 const UserAuth = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [step, setStep] = useState(1);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -155,202 +194,269 @@ const UserAuth = () => {
   };
 
   if (loading && step === 1) {
-    return <div className="loading-spinner"></div>;
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return (
-    <div className="auth-container">
-      <div className="auth-form-container">
-        <h2>{step === 3 ? 'Welcome Back!' : 'Join Our Community'}</h2>
-        {step === 1 && <p>Start your journey with us. Create an account to explore job opportunities.</p>}
-        {step === 2 && <p>Tell us more about yourself to help you find the perfect job match.</p>}
-        {step === 3 && <p>Sign in to access your dashboard and continue your job search.</p>}
-        
+    <AuthContainer>
+      <AuthPaper elevation={3}>
+        <Box textAlign="center" mb={4}>
+          <Typography variant="h4" gutterBottom>
+            {step === 3 ? 'Welcome Back!' : 'Join Our Community'}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {step === 1 && 'Start your journey with us. Create an account to explore job opportunities.'}
+            {step === 2 && 'Tell us more about yourself to help you find the perfect job match.'}
+            {step === 3 && 'Sign in to access your dashboard and continue your job search.'}
+          </Typography>
+        </Box>
+
         {step !== 3 && (
-          <div className="step-indicator">
-            <div className={`step-dot ${step >= 1 ? 'active' : ''}`}></div>
-            <div className={`step-dot ${step >= 2 ? 'active' : ''}`}></div>
-          </div>
+          <Stepper activeStep={step - 1} alternativeLabel sx={{ mb: 4 }}>
+            <Step>
+              <StepLabel>Email Verification</StepLabel>
+            </Step>
+            <Step>
+              <StepLabel>Complete Profile</StepLabel>
+            </Step>
+          </Stepper>
         )}
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
 
         {step === 1 && (
           <form onSubmit={handleSignup}>
-            <div className="input-group">
-              <label>Email Address</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <button type="submit" disabled={loading}>
+            <TextField
+              fullWidth
+              label="Email Address"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              margin="normal"
+            />
+            <Button
+              fullWidth
+              variant="contained"
+              color="primary"
+              type="submit"
+              disabled={loading}
+              sx={{ mt: 3 }}
+            >
               {loading ? 'Sending OTP...' : 'Get Started'}
-            </button>
-            <div className="auth-toggle">
-              Already have an account?{' '}
-              <span onClick={() => setStep(3)} className="link">
-                Sign In
-              </span>
-            </div>
+            </Button>
+            <Box textAlign="center" mt={2}>
+              <Typography variant="body2">
+                Already have an account?{' '}
+                <Button
+                  color="primary"
+                  onClick={() => setStep(3)}
+                  sx={{ textTransform: 'none' }}
+                >
+                  Sign In
+                </Button>
+              </Typography>
+            </Box>
           </form>
         )}
 
         {step === 2 && (
           <form onSubmit={handleVerifyAndComplete}>
-            <div className="input-group">
-              <label>OTP</label>
-              <input
-                type="text"
-                name="otp"
-                value={formData.otp}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="input-group">
-              <label>Create Password</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="input-group">
-              <label>Full Name</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="input-group">
-              <label>Phone Number</label>
-              <input
-                type="tel"
-                name="phoneNumber"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="input-group">
-              <label>Skills (comma separated)</label>
-              <input
-                type="text"
-                name="skills"
-                value={formData.skills}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="input-group">
-              <label>Years of Experience</label>
-              <input
-                type="number"
-                name="experience"
-                value={formData.experience}
-                onChange={handleChange}
-              />
-            </div>
+            <TextField
+              fullWidth
+              label="OTP"
+              name="otp"
+              value={formData.otp}
+              onChange={handleChange}
+              required
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Create Password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              value={formData.password}
+              onChange={handleChange}
+              required
+              margin="normal"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <TextField
+              fullWidth
+              label="Full Name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Phone Number"
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              required
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Skills (comma separated)"
+              name="skills"
+              value={formData.skills}
+              onChange={handleChange}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Years of Experience"
+              name="experience"
+              type="number"
+              value={formData.experience}
+              onChange={handleChange}
+              margin="normal"
+            />
 
-            <div className="education-section">
-              <h3>Education Details</h3>
-              <div className="input-group">
-                <label>Degree</label>
-                <input
-                  type="text"
-                  name="education.degree"
-                  value={formData.education.degree}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="input-group">
-                <label>Field of Study</label>
-                <input
-                  type="text"
-                  name="education.field"
-                  value={formData.education.field}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="input-group">
-                <label>Institution</label>
-                <input
-                  type="text"
-                  name="education.institution"
-                  value={formData.education.institution}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="input-group">
-                <label>Graduation Year</label>
-                <input
-                  type="number"
-                  name="education.year"
-                  value={formData.education.year}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
+            <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
+              Education Details
+            </Typography>
+            <TextField
+              fullWidth
+              label="Degree"
+              name="education.degree"
+              value={formData.education.degree}
+              onChange={handleChange}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Field of Study"
+              name="education.field"
+              value={formData.education.field}
+              onChange={handleChange}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Institution"
+              name="education.institution"
+              value={formData.education.institution}
+              onChange={handleChange}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Graduation Year"
+              name="education.year"
+              type="number"
+              value={formData.education.year}
+              onChange={handleChange}
+              margin="normal"
+            />
 
-            <div className="input-group">
-              <label>Location</label>
-              <input
-                type="text"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-              />
-            </div>
+            <TextField
+              fullWidth
+              label="Location"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              margin="normal"
+            />
 
-            <button type="submit" disabled={loading}>
+            <Button
+              fullWidth
+              variant="contained"
+              color="primary"
+              type="submit"
+              disabled={loading}
+              sx={{ mt: 3 }}
+            >
               {loading ? 'Creating Account...' : 'Complete Registration'}
-            </button>
+            </Button>
           </form>
         )}
 
         {step === 3 && (
           <form onSubmit={handleLogin}>
-            <div className="input-group">
-              <label>Email Address</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="input-group">
-              <label>Password</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <button type="submit" disabled={loading}>
+            <TextField
+              fullWidth
+              label="Email Address"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              value={formData.password}
+              onChange={handleChange}
+              required
+              margin="normal"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Button
+              fullWidth
+              variant="contained"
+              color="primary"
+              type="submit"
+              disabled={loading}
+              sx={{ mt: 3 }}
+            >
               {loading ? 'Logging in...' : 'Login'}
-            </button>
-            <div className="auth-toggle">
-              Don't have an account?{' '}
-              <span onClick={() => setStep(1)} className="link">
-                Sign Up
-              </span>
-            </div>
+            </Button>
+            <Box textAlign="center" mt={2}>
+              <Typography variant="body2">
+                Don't have an account?{' '}
+                <Button
+                  color="primary"
+                  onClick={() => setStep(1)}
+                  sx={{ textTransform: 'none' }}
+                >
+                  Sign Up
+                </Button>
+              </Typography>
+            </Box>
           </form>
         )}
-      </div>
-    </div>
+      </AuthPaper>
+    </AuthContainer>
   );
 };
 

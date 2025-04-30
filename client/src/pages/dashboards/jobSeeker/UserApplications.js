@@ -1,196 +1,257 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { APP_URL } from '../../../lib/Constant';
-import './UserApplications.css';
+import {
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Chip,
+  CircularProgress,
+  Alert,
+  useTheme,
+  useMediaQuery,
+  Card,
+  CardContent,
+  Divider,
+} from '@mui/material';
+import {
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  Message as MessageIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  AccessTime as AccessTimeIcon,
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
 
-const ApplicationModal = ({ application, onClose }) => {
-  if (!application) return null;
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  '&:nth-of-type(odd)': {
+    backgroundColor: theme.palette.action.hover,
+  },
+  '&:last-child td, &:last-child th': {
+    border: 0,
+  },
+}));
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>&times;</button>
-        
-        <div className="modal-header">
-          <h2>{application.job?.title}</h2>
-          <div className="company-name">{application.job?.company}</div>
-        </div>
-
-        <div className="modal-body">
-          <div className="status-section">
-            <h3>Application Status</h3>
-            <div className={`status-badge ${application.status.toLowerCase()}`}>
-              {application.status}
-            </div>
-          </div>
-
-          <div className="details-section">
-            <div className="detail-row">
-              <span className="label">Applied Date:</span>
-              <span>{new Date(application.appliedDate).toLocaleDateString()}</span>
-            </div>
-            <div className="detail-row">
-              <span className="label">Location:</span>
-              <span>{application.job?.location || 'Remote'}</span>
-            </div>
-            <div className="detail-row">
-              <span className="label">Salary:</span>
-              <span>{application.job?.salary || 'Not specified'}</span>
-            </div>
-          </div>
-
-          {application.feedback && (
-            <div className="feedback-section">
-              <h3>Recruiter Feedback</h3>
-              <div className="feedback-content">
-                {application.feedback}
-              </div>
-            </div>
-          )}
-
-          {application.status === 'Accepted' && application.nextSteps && (
-            <div className="next-steps-section">
-              <h3>Next Steps</h3>
-              <div className="next-steps-content">
-                {application.nextSteps}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
+const StatusChip = styled(Chip)(({ theme, status }) => ({
+  backgroundColor: status === 'pending' ? theme.palette.warning.light :
+    status === 'accepted' ? theme.palette.success.light :
+    status === 'rejected' ? theme.palette.error.light :
+    theme.palette.info.light,
+  color: theme.palette.common.white,
+}));
 
 const UserApplications = () => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
   const [selectedApplication, setSelectedApplication] = useState(null);
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+  });
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
-    const fetchApplications = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${APP_URL}/jobseekers/applications`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const applicationsData = response.data.applications || [];
-        console.log('Applications data:', applicationsData);
-        setApplications(applicationsData);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching applications:', error);
-        setError(error.response?.data?.message || 'Failed to load applications');
-        setLoading(false);
-      }
-    };
-
     fetchApplications();
-  }, []);
+  }, [filters]);
 
-  const filteredApplications = applications.filter(app => 
-    statusFilter === 'all' || app.status.toLowerCase() === statusFilter
-  );
+  const fetchApplications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${APP_URL}/jobseekers/applications`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        params: filters
+      });
+      setApplications(response.data.applications);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch applications');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleCardClick = (application) => {
-    setSelectedApplication(application);
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
   };
 
   if (loading) {
     return (
-      <div className="applications-container">
-        <div className="loading">
-          <div className="loading-spinner"></div>
-          <p>Loading applications...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="applications-container">
-        <div className="error-message">
-          <span>⚠️</span>
-          <p>{error}</p>
-          <button onClick={() => window.location.reload()}>Try Again</button>
-        </div>
-      </div>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
     );
   }
 
   return (
-    <div className="applications-container">
-      <div className="applications-header">
-        <h2>My Applications</h2>
-        <div className="filter-section">
-          <select 
-            className="status-filter"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="accepted">Accepted</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        </div>
-      </div>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Typography variant="h4" gutterBottom>
+        My Applications
+      </Typography>
 
-      {filteredApplications.length > 0 ? (
-        <div className="applications-grid">
-          {filteredApplications.map((application) => (
-            <div 
-              key={application._id} 
-              className="application-card"
-              onClick={() => handleCardClick(application)}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <TextField
+            size="small"
+            placeholder="Search jobs..."
+            value={filters.search}
+            onChange={handleFilterChange}
+            name="search"
+            InputProps={{
+              startAdornment: <SearchIcon />,
+            }}
+          />
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Status</InputLabel>
+            <Select
+              value={filters.status}
+              onChange={handleFilterChange}
+              name="status"
+              label="Status"
             >
-              <div className="company-logo">
-                {application.job?.company?.charAt(0) || 'C'}
-              </div>
-              <div className="application-content">
-                <h3 className="job-title">{application.job?.title}</h3>
-                <div className="company-name">{application.job?.company}</div>
-                
-                <div className="application-details">
-                  <div className="detail-item">
-                    <span className="detail-icon">📅</span>
-                    {new Date(application.appliedDate).toLocaleDateString()}
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-icon">📍</span>
-                    {application.job?.location || 'Remote'}
-                  </div>
-                </div>
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="accepted">Accepted</MenuItem>
+              <MenuItem value="rejected">Rejected</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      </Paper>
 
-                <div className={`application-status ${application.status.toLowerCase()}`}>
-                  {application.status}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="no-applications">
-          <div className="no-data-icon">📝</div>
-          <h3>No Applications Found</h3>
-          <p>
-            {statusFilter === 'all' 
-              ? "You haven't applied to any jobs yet. Start exploring opportunities!"
-              : `No applications with ${statusFilter} status.`}
-          </p>
-        </div>
-      )}
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Job Title</TableCell>
+              <TableCell>Company</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Applied Date</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {applications.map((application) => (
+              <StyledTableRow key={application._id}>
+                <TableCell>{application.job.title}</TableCell>
+                <TableCell>{application.job.company}</TableCell>
+                <TableCell>
+                  <StatusChip
+                    label={application.status}
+                    status={application.status}
+                  />
+                </TableCell>
+                <TableCell>
+                  {new Date(application.createdAt).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setSelectedApplication(application);
+                      setDetailsDialogOpen(true);
+                    }}
+                  >
+                    <MessageIcon />
+                  </IconButton>
+                </TableCell>
+              </StyledTableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-      {selectedApplication && (
-        <ApplicationModal 
-          application={selectedApplication} 
-          onClose={() => setSelectedApplication(null)}
-        />
-      )}
-    </div>
+      <Dialog
+        open={detailsDialogOpen}
+        onClose={() => setDetailsDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Application Details</DialogTitle>
+        <DialogContent>
+          {selectedApplication && (
+            <Box sx={{ mt: 2 }}>
+              <Card sx={{ mb: 2 }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    {selectedApplication.job.title}
+                  </Typography>
+                  <Typography color="text.secondary" gutterBottom>
+                    {selectedApplication.job.company}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                    <StatusChip
+                      label={selectedApplication.status}
+                      status={selectedApplication.status}
+                    />
+                  </Box>
+                  <Typography variant="body2">
+                    Applied on: {new Date(selectedApplication.createdAt).toLocaleDateString()}
+                  </Typography>
+                </CardContent>
+              </Card>
+
+              {selectedApplication.recruiterComment && (
+                <Card sx={{ mb: 2 }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Recruiter's Comment
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    <Typography variant="body1">
+                      {selectedApplication.recruiterComment}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                      Last updated: {new Date(selectedApplication.updatedAt).toLocaleDateString()}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Your Application
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+                  <Typography variant="body1" paragraph>
+                    {selectedApplication.coverLetter}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDetailsDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 
