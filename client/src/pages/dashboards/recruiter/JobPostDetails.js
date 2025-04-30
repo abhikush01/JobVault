@@ -2,7 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Outlet } from 'react-router';
 import axios from 'axios';
 import { APP_URL } from '../../../lib/Constant';
-import './RecruiterDashboard.css';
+import {
+  Box,
+  Typography,
+  Paper,
+  TextField,
+  Button,
+  CircularProgress,
+  Alert,
+  Grid,
+  Divider,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import {
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon,
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  marginBottom: theme.spacing(3),
+}));
 
 const JobPostDetails = () => {
   const { id } = useParams();
@@ -20,6 +49,8 @@ const JobPostDetails = () => {
     location: '',
     requirements: ''
   });
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     fetchJobDetails();
@@ -34,12 +65,10 @@ const JobPostDetails = () => {
         }
       });
       setJob(response.data.job);
-      
-      const jobData = response.data.job;
       setFormData({
-        ...jobData,
-        experience: jobData.experience,
-        salary: jobData.salary
+        ...response.data.job,
+        experience: response.data.job.experience,
+        salary: response.data.job.salary
       });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch job details');
@@ -113,172 +142,213 @@ const JobPostDetails = () => {
   };
 
   if (loading) {
-    return <div className="loading">Loading...</div>;
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (!job) {
-    return <div className="error-message">Job not found</div>;
+    return (
+      <Alert severity="error">
+        Job not found
+      </Alert>
+    );
   }
 
   return (
-    <div className="job-details-container">
-      <div className="job-details-header">
-        <h2>{isEditing ? 'Edit Job Post' : 'Job Details'}</h2>
-        <div className="header-actions">
-          {!isEditing && (
-            <>
-              <button onClick={() => setIsEditing(true)} className="edit-btn">
-                Edit
-              </button>
-              <button onClick={handleDelete} className="delete-btn">
-                Delete
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4">
+          {isEditing ? 'Edit Job Post' : 'Job Details'}
+        </Typography>
+        {!isEditing && (
+          <Box>
+            <IconButton
+              color="primary"
+              onClick={() => setIsEditing(true)}
+              sx={{ mr: 1 }}
+            >
+              <EditIcon />
+            </IconButton>
+            <IconButton
+              color="error"
+              onClick={handleDelete}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        )}
+      </Box>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
       {isEditing ? (
-        <form onSubmit={handleUpdate} className="job-form">
-          <div className="form-group">
-            <label>Job Title</label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Position</label>
-            <input
-              type="text"
-              name="position"
-              value={formData.position}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              required
-              rows="6"
-            />
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label>Experience (Years)</label>
-              <div className="range-inputs">
-                <input
-                  type="number"
-                  value={formData.experience?.split('-')[0] || ''}
-                  onChange={(e) => handleRangeChange('experience', 'min', e.target.value)}
+        <StyledPaper>
+          <form onSubmit={handleUpdate}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Job Title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
                   required
-                  min="0"
                 />
-                <span>to</span>
-                <input
-                  type="number"
-                  value={formData.experience?.split('-')[1] || ''}
-                  onChange={(e) => handleRangeChange('experience', 'max', e.target.value)}
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Position"
+                  name="position"
+                  value={formData.position}
+                  onChange={handleChange}
                   required
-                  min="0"
                 />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label>Salary Range (₹)</label>
-              <div className="range-inputs">
-                <input
-                  type="number"
-                  value={formData.salary?.split('-')[0] || ''}
-                  onChange={(e) => handleRangeChange('salary', 'min', e.target.value)}
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  multiline
+                  rows={4}
                   required
-                  min="0"
                 />
-                <span>to</span>
-                <input
-                  type="number"
-                  value={formData.salary?.split('-')[1] || ''}
-                  onChange={(e) => handleRangeChange('salary', 'max', e.target.value)}
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Experience (Years)"
+                  name="experience"
+                  value={formData.experience}
+                  onChange={handleChange}
                   required
-                  min="0"
                 />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>Location</label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-actions">
-            <button type="submit" className="save-btn" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Changes'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsEditing(false);
-                setFormData(job);
-              }}
-              className="cancel-btn"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Salary Range (₹)"
+                  name="salary"
+                  value={formData.salary}
+                  onChange={handleChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Location"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Requirements"
+                  name="requirements"
+                  value={formData.requirements}
+                  onChange={handleChange}
+                  multiline
+                  rows={4}
+                  required
+                />
+              </Grid>
+            </Grid>
+            <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+              <Button
+                variant="outlined"
+                startIcon={<CancelIcon />}
+                onClick={() => {
+                  setIsEditing(false);
+                  setFormData(job);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                startIcon={<SaveIcon />}
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </Box>
+          </form>
+        </StyledPaper>
       ) : (
-        <div className="job-details-content">
-          <div className="detail-section">
-            <h3>{job.title}</h3>
-            <p className="position">{job.position}</p>
-          </div>
-
-          <div className="detail-section">
-            <h4>Description</h4>
-            <p className="description">{job.description}</p>
-          </div>
-
-          <div className="detail-section">
-            <h4>Requirements</h4>
-            <div className="requirements">
-              <p>
-                <strong>Experience:</strong> {job.experience} years
-              </p>
-              <p>
-                <strong>Salary Range:</strong> ₹{job.salary}
-              </p>
-              <p>
-                <strong>Location:</strong> {job.location}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StyledPaper>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Typography variant="h5" gutterBottom>
+                {job.title}
+              </Typography>
+              <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+                {job.position}
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Divider sx={{ my: 2 }} />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Description
+              </Typography>
+              <Typography variant="body1" paragraph>
+                {job.description}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Requirements
+              </Typography>
+              <Typography variant="body1" paragraph>
+                {job.requirements}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Experience
+              </Typography>
+              <Typography variant="body1">
+                {job.experience} years
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Salary Range
+              </Typography>
+              <Typography variant="body1">
+                ₹{job.salary}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Location
+              </Typography>
+              <Typography variant="body1">
+                {job.location}
+              </Typography>
+            </Grid>
+          </Grid>
+        </StyledPaper>
       )}
 
       <Outlet />
-    </div>
+    </Box>
   );
 };
 

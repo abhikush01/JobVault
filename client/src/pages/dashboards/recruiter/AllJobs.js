@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import axios from 'axios';
 import { APP_URL } from '../../../lib/Constant';
-import './RecruiterDashboard.css';
 
 const AllJobs = () => {
   const [jobs, setJobs] = useState([]);

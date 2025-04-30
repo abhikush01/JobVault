@@ -1,9 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { FaPlus, FaEye, FaEdit, FaTrash, FaUsers } from 'react-icons/fa';
 import axios from 'axios';
 import { APP_URL } from '../../../lib/Constant';
-import './JobListings.css';
+import {
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Button,
+  IconButton,
+  Chip,
+  CircularProgress,
+  Alert,
+  Pagination,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Visibility as VisibilityIcon,
+  Delete as DeleteIcon,
+  People as PeopleIcon,
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  '&:nth-of-type(odd)': {
+    backgroundColor: theme.palette.action.hover,
+  },
+  '&:last-child td, &:last-child th': {
+    border: 0,
+  },
+}));
+
+const StatusChip = styled(Chip)(({ theme, status }) => ({
+  backgroundColor: status === 'active' ? theme.palette.success.light :
+    status === 'closed' ? theme.palette.error.light :
+    theme.palette.warning.light,
+  color: theme.palette.common.white,
+}));
 
 const JobListings = () => {
   const navigate = useNavigate();
@@ -22,6 +67,8 @@ const JobListings = () => {
     totalEntries: 0,
     entriesPerPage: 10
   });
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     fetchJobs();
@@ -39,8 +86,6 @@ const JobListings = () => {
         }
       });
 
-      console.log('Jobs response:', response.data); // Debug log
-
       setJobs(response.data.jobs);
       setPagination(prev => ({
         ...prev,
@@ -48,7 +93,6 @@ const JobListings = () => {
         totalEntries: response.data.pagination.total
       }));
     } catch (err) {
-      console.error('Error fetching jobs:', err);
       setError(err.response?.data?.message || 'Failed to fetch jobs');
     } finally {
       setLoading(false);
@@ -61,7 +105,7 @@ const JobListings = () => {
     setPagination(prev => ({ ...prev, currentPage: 1 }));
   };
 
-  const handlePageChange = (page) => {
+  const handlePageChange = (event, page) => {
     setPagination(prev => ({ ...prev, currentPage: page }));
   };
 
@@ -75,149 +119,153 @@ const JobListings = () => {
         fetchJobs();
       } catch (err) {
         setError('Failed to delete job');
-        console.error(err);
       }
     }
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
-  if (error) return <div className="error">{error}</div>;
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
-    <div className="jobs-page">
-      <div className="header">
-        <h1>My Job Postings</h1>
-        <button 
-          className="create-job-btn"
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4">My Job Postings</Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
           onClick={() => navigate('/recruiter-dashboard/create-new-job')}
         >
-          <FaPlus /> Create New Job
-        </button>
-      </div>
+          Create New Job
+        </Button>
+      </Box>
 
-      <div className="filters-section">
-        <div className="search-filters">
-          <div className="filter-group">
-            <label htmlFor="search">Search</label>
-            <input
-              type="text"
-              id="search"
-              name="search"
-              placeholder="Search by title or location..."
-              value={filters.search}
-              onChange={handleFilterChange}
-            />
-          </div>
-          <div className="filter-group">
-            <label htmlFor="status">Status</label>
-            <select
-              id="status"
-              name="status"
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <TextField
+            size="small"
+            placeholder="Search by title or location..."
+            value={filters.search}
+            onChange={handleFilterChange}
+            name="search"
+          />
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Status</InputLabel>
+            <Select
               value={filters.status}
               onChange={handleFilterChange}
+              name="status"
+              label="Status"
             >
-              <option value="">All Status</option>
-              <option value="active">Active</option>
-              <option value="closed">Closed</option>
-            </select>
-          </div>
-          {/* Add other filter groups similarly */}
-        </div>
-      </div>
+              <MenuItem value="">All Status</MenuItem>
+              <MenuItem value="active">Active</MenuItem>
+              <MenuItem value="closed">Closed</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Experience</InputLabel>
+            <Select
+              value={filters.experience}
+              onChange={handleFilterChange}
+              name="experience"
+              label="Experience"
+            >
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value="0-2">0-2 years</MenuItem>
+              <MenuItem value="2-5">2-5 years</MenuItem>
+              <MenuItem value="5+">5+ years</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      </Paper>
 
-      <div className="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Job Title</th>
-              <th>Location</th>
-              <th>Experience</th>
-              <th>Salary Range</th>
-              <th>Status</th>
-              <th>Applications</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Job Title</TableCell>
+              <TableCell>Location</TableCell>
+              <TableCell>Experience</TableCell>
+              <TableCell>Salary Range</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Applications</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
             {jobs.map(job => (
-              <tr key={job._id}>
-                <td>{job.title}</td>
-                <td>{job.location}</td>
-                <td>{`${job.experience?.min || 0}-${job.experience?.max || 0} years`}</td>
-                <td>{`₹${job.salary}`}</td>
-                <td>
-                  <span className={`status ${job.status.toLowerCase()}`}>
-                    {job.status}
-                  </span>
-                </td>
-                <td>
-                  <div className="application-cell">
-                    <span>{job.applicationCount || 0}</span>
-                    <button 
-                      className="action-btn applications-btn"
+              <StyledTableRow key={job._id}>
+                <TableCell>{job.title}</TableCell>
+                <TableCell>{job.location}</TableCell>
+                <TableCell>{`${job.experience?.min || 0}-${job.experience?.max || 0} years`}</TableCell>
+                <TableCell>{`₹${job.salary}`}</TableCell>
+                <TableCell>
+                  <StatusChip
+                    label={job.status}
+                    status={job.status}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography>{job.applicationCount || 0}</Typography>
+                    <IconButton
+                      size="small"
                       onClick={() => navigate(`/recruiter-dashboard/jobs/${job._id}/applications`)}
                       title="View Applications"
                     >
-                      <FaUsers />
-                    </button>
-                  </div>
-                </td>
-                <td>
-                  <div className="actions">
-                    <button 
-                      className="action-btn view-btn"
+                      <PeopleIcon />
+                    </IconButton>
+                  </Box>
+                </TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <IconButton
+                      size="small"
                       onClick={() => navigate(`/recruiter-dashboard/jobs/${job._id}`)}
                       title="View Job Details"
                     >
-                      <FaEye />
-                    </button>
-                    <button 
-                      className="action-btn delete-btn"
+                      <VisibilityIcon />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      color="error"
                       onClick={() => handleDelete(job._id)}
                       title="Delete Job"
                     >
-                      <FaTrash />
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                </TableCell>
+              </StyledTableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-        <div className="pagination">
-          <div className="page-info">
-            Showing {((pagination.currentPage - 1) * pagination.entriesPerPage) + 1}-
-            {Math.min(pagination.currentPage * pagination.entriesPerPage, pagination.totalEntries)} of {pagination.totalEntries} entries
-          </div>
-          <div className="page-buttons">
-            <button 
-              className="page-btn"
-              disabled={pagination.currentPage === 1}
-              onClick={() => handlePageChange(pagination.currentPage - 1)}
-            >
-              Previous
-            </button>
-            {[...Array(pagination.totalPages)].map((_, i) => (
-              <button
-                key={i + 1}
-                className={`page-btn ${pagination.currentPage === i + 1 ? 'active' : ''}`}
-                onClick={() => handlePageChange(i + 1)}
-              >
-                {i + 1}
-              </button>
-            ))}
-            <button 
-              className="page-btn"
-              disabled={pagination.currentPage === pagination.totalPages}
-              onClick={() => handlePageChange(pagination.currentPage + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+        <Typography variant="body2" color="text.secondary">
+          Showing {((pagination.currentPage - 1) * pagination.entriesPerPage) + 1}-
+          {Math.min(pagination.currentPage * pagination.entriesPerPage, pagination.totalEntries)} of {pagination.totalEntries} entries
+        </Typography>
+        <Pagination
+          count={pagination.totalPages}
+          page={pagination.currentPage}
+          onChange={handlePageChange}
+          color="primary"
+          size={isMobile ? "small" : "medium"}
+        />
+      </Box>
+    </Box>
   );
 };
 

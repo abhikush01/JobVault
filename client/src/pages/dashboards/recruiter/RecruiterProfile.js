@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { FaUser, FaBuilding, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
 import axios from 'axios';
 import { APP_URL } from '../../../lib/Constant';
-import './RecruiterProfile.css';
 
 const RecruiterProfile = () => {
   const [profile, setProfile] = useState({

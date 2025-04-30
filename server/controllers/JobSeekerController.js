@@ -94,64 +94,58 @@ class JobSeekerController {
   }
 
   // Apply for a job
-  // Apply for a job
   async applyForJob(req, res) {
     try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
-      }
-      // Create a readable stream from the in-memory file buffer
-      const binaryFile = req.file.buffer.toString("binary");
-
-      // Prepare FormData
-      const formBody = qs.stringify({
-        file: binaryFile,
-      });
-
-      // Set up the API request to send the file for parsing
-      const options = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "x-rapidapi-key": process.env.RESUME_PARSER_KEY,
-          "x-rapidapi-host": "resume-parser-and-analyzer.p.rapidapi.com",
-        },
-        body: formBody,
-      };
-
-      // Send the file to the external resume parser API
-      const response = await fetch(
-        "https://resume-parser-and-analyzer.p.rapidapi.com/api/v1/cv/",
-        options
-      );
-      const parsedData = await response.json();
-      console.log(parsedData);
-
-      if (!parsedData || !parsedData.success) {
-        return res.status(500).json({ message: "Failed to parse the resume" });
-      }
-
-      // Save parsed data to your database (example: JobApplication)
       const jobId = req.params.id;
       const userId = req.user.id;
 
+      console.log('Applying for job:', { jobId, userId });
+
+      // Check if job exists
+      const job = await Job.findById(jobId);
+      if (!job) {
+        return res.status(404).json({ message: 'Job not found' });
+      }
+
+      // Check if already applied
+      const existingApplication = await JobApplication.findOne({
+        job: jobId,
+        applicant: userId
+      });
+
+      if (existingApplication) {
+        return res.status(400).json({ message: 'You have already applied for this job' });
+      }
+
+      // Create new application
       const application = new JobApplication({
         job: jobId,
         applicant: userId,
-        status: "pending",
-        parsedResumeData: parsedData, // Save the parsed data
+        status: 'pending'
       });
 
       await application.save();
+      console.log('New application created:', {
+        id: application._id,
+        jobId: application.job,
+        applicantId: application.applicant,
+        status: application.status
+      });
 
-      res.status(201).json({
-        message: "Application submitted successfully",
-        application,
+      // Populate the application details
+      const populatedApplication = await JobApplication.findById(application._id)
+        .populate('job', 'title company')
+        .populate('applicant', 'name email');
+
+      res.status(201).json({ 
+        message: 'Application submitted successfully',
+        application: populatedApplication
       });
     } catch (error) {
-      res.status(500).json({
-        message: "Error applying for job",
-        error: error.message,
+      console.error('Error in applyForJob:', error);
+      res.status(500).json({ 
+        message: 'Error submitting application',
+        error: error.message 
       });
     }
   }

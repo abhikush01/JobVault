@@ -1,9 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { APP_URL } from '../../../lib/Constant';
-import './UserProfile.css';
+import {
+  Box,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Grid,
+  CircularProgress,
+  Alert,
+  Chip,
+  Divider,
+  Card,
+  CardContent,
+  IconButton,
+  useTheme,
+} from '@mui/material';
+import {
+  Edit as EditIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon,
+  Person,
+  Email,
+  Phone,
+  LocationOn,
+  School,
+  Work,
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+
+const InfoItem = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  marginBottom: theme.spacing(2),
+  '& .MuiSvgIcon-root': {
+    marginRight: theme.spacing(1),
+    color: theme.palette.primary.main,
+  },
+}));
 
 const UserProfile = () => {
+  const theme = useTheme();
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -95,212 +133,260 @@ const UserProfile = () => {
 
   if (loading) {
     return (
-      <div className="profile-container">
-        <div className="loading">
-          <div className="loading-spinner"></div>
-          <p>Loading profile...</p>
-        </div>
-      </div>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <div className="profile-container">
-        <div className="error-message">
-          <span>⚠️</span>
-          <p>{error}</p>
-          <button onClick={fetchProfile}>Try Again</button>
-        </div>
-      </div>
+      <Box p={3}>
+        <Alert 
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={fetchProfile}>
+              Retry
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
+      </Box>
     );
   }
 
   return (
-    <div className="profile-container">
-      <div className="profile-header">
-        <div className="profile-title">
-          <h2>My Profile</h2>
-          <button 
-            className="edit-button"
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4">My Profile</Typography>
+          <IconButton
+            color="primary"
             onClick={() => setIsEditing(!isEditing)}
+            size="large"
           >
-            {isEditing ? 'Cancel' : 'Edit Profile'}
-          </button>
-        </div>
-      </div>
+            {isEditing ? <CancelIcon /> : <EditIcon />}
+          </IconButton>
+        </Box>
 
-      {isEditing ? (
-        <form onSubmit={handleSubmit} className="profile-form">
-          <div className="form-section">
-            <h3>Personal Information</h3>
-            <div className="form-grid">
-              <div className="input-group">
-                <label>Full Name</label>
-                <input
-                  type="text"
+        {isEditing ? (
+          <form onSubmit={handleSubmit}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Full Name"
                   name="name"
                   value={editedProfile.name}
                   onChange={handleInputChange}
                   required
                 />
-              </div>
-              <div className="input-group">
-                <label>Email</label>
-                <input
-                  type="email"
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Email"
                   name="email"
                   value={editedProfile.email}
                   disabled
                 />
-              </div>
-              <div className="input-group">
-                <label>Phone Number</label>
-                <input
-                  type="tel"
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Phone Number"
                   name="phoneNumber"
                   value={editedProfile.phoneNumber}
                   onChange={handleInputChange}
                 />
-              </div>
-              <div className="input-group">
-                <label>Location</label>
-                <input
-                  type="text"
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Location"
                   name="location"
                   value={editedProfile.location}
                   onChange={handleInputChange}
                 />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h3>Professional Information</h3>
-            <div className="form-grid">
-              <div className="input-group full-width">
-                <label>Skills (comma separated)</label>
-                <input
-                  type="text"
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Skills (comma separated)"
                   name="skills"
                   value={editedProfile.skills.join(', ')}
                   onChange={handleSkillsChange}
+                  multiline
+                  rows={2}
                 />
-              </div>
-              <div className="input-group">
-                <label>Years of Experience</label>
-                <input
-                  type="number"
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Years of Experience"
                   name="experience"
+                  type="number"
                   value={editedProfile.experience}
                   onChange={handleInputChange}
                 />
-              </div>
-            </div>
-          </div>
+              </Grid>
 
-          <div className="form-section">
-            <h3>Education</h3>
-            <div className="form-grid">
-              <div className="input-group">
-                <label>Degree</label>
-                <input
-                  type="text"
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                  Education
+                </Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Degree"
                   name="education.degree"
                   value={editedProfile.education.degree}
                   onChange={handleInputChange}
                 />
-              </div>
-              <div className="input-group">
-                <label>Field of Study</label>
-                <input
-                  type="text"
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Field of Study"
                   name="education.field"
                   value={editedProfile.education.field}
                   onChange={handleInputChange}
                 />
-              </div>
-              <div className="input-group">
-                <label>Institution</label>
-                <input
-                  type="text"
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Institution"
                   name="education.institution"
                   value={editedProfile.education.institution}
                   onChange={handleInputChange}
                 />
-              </div>
-              <div className="input-group">
-                <label>Graduation Year</label>
-                <input
-                  type="number"
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Graduation Year"
                   name="education.year"
+                  type="number"
                   value={editedProfile.education.year}
                   onChange={handleInputChange}
                 />
-              </div>
-            </div>
-          </div>
+              </Grid>
+            </Grid>
 
-          <div className="form-actions">
-            <button type="submit" className="save-button">Save Changes</button>
-          </div>
-        </form>
-      ) : (
-        <div className="profile-content">
-          <div className="profile-section">
-            <h3>Personal Information</h3>
-            <div className="info-grid">
-              <div className="info-item">
-                <span className="info-label">Full Name</span>
-                <span className="info-value">{profile.name || 'Not specified'}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">Email</span>
-                <span className="info-value">{profile.email || 'Not specified'}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">Phone</span>
-                <span className="info-value">{profile.phoneNumber || 'Not specified'}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">Location</span>
-                <span className="info-value">{profile.location || 'Not specified'}</span>
-              </div>
-            </div>
-          </div>
+            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={() => setIsEditing(false)}
+                startIcon={<CancelIcon />}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                startIcon={<SaveIcon />}
+              >
+                Save Changes
+              </Button>
+            </Box>
+          </form>
+        ) : (
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Personal Information
+                  </Typography>
+                  <InfoItem>
+                    <Person />
+                    <Typography>{profile.name || 'Not specified'}</Typography>
+                  </InfoItem>
+                  <InfoItem>
+                    <Email />
+                    <Typography>{profile.email || 'Not specified'}</Typography>
+                  </InfoItem>
+                  <InfoItem>
+                    <Phone />
+                    <Typography>{profile.phoneNumber || 'Not specified'}</Typography>
+                  </InfoItem>
+                  <InfoItem>
+                    <LocationOn />
+                    <Typography>{profile.location || 'Not specified'}</Typography>
+                  </InfoItem>
+                </CardContent>
+              </Card>
+            </Grid>
 
-          <div className="profile-section">
-            <h3>Professional Information</h3>
-            <div className="skills-section">
-              <h4>Skills</h4>
-              <div className="skills-list">
-                {profile.skills && profile.skills.length > 0 ? (
-                  profile.skills.map((skill, index) => (
-                    <span key={index} className="skill-tag">{skill}</span>
-                  ))
-                ) : (
-                  <span className="no-skills">No skills listed</span>
-                )}
-              </div>
-            </div>
-            <div className="info-item">
-              <span className="info-label">Years of Experience</span>
-              <span className="info-value">{profile.experience || 0}</span>
-            </div>
-          </div>
+            <Grid item xs={12} md={6}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Professional Information
+                  </Typography>
+                  <InfoItem>
+                    <Work />
+                    <Typography>{profile.experience} years of experience</Typography>
+                  </InfoItem>
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Skills
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {profile.skills && profile.skills.length > 0 ? (
+                        profile.skills.map((skill, index) => (
+                          <Chip
+                            key={index}
+                            label={skill}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                          />
+                        ))
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          No skills listed
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
 
-          <div className="profile-section">
-            <h3>Education</h3>
-            <div className="education-card">
-              <h4>{profile.education?.degree || 'Degree not specified'}</h4>
-              <p>{profile.education?.field || 'Field not specified'}</p>
-              <p>{profile.education?.institution || 'Institution not specified'}</p>
-              <p>Graduated: {profile.education?.year || 'Year not specified'}</p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+            <Grid item xs={12}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Education
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <School sx={{ mr: 2, color: 'primary.main' }} />
+                    <Box>
+                      <Typography variant="subtitle1">
+                        {profile.education?.degree || 'Degree not specified'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {profile.education?.field || 'Field not specified'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {profile.education?.institution || 'Institution not specified'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Graduated: {profile.education?.year || 'Year not specified'}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        )}
+      </Paper>
+    </Box>
   );
 };
 

@@ -2,7 +2,28 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import axios from 'axios';
 import { APP_URL } from '../../../lib/Constant';
-import './RecruiterDashboard.css';
+import {
+  Box,
+  Typography,
+  Paper,
+  TextField,
+  Button,
+  CircularProgress,
+  Alert,
+  Grid,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import {
+  Save as SaveIcon,
+  Cancel as CancelIcon,
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  marginBottom: theme.spacing(3),
+}));
 
 const NewJobPost = () => {
   const navigate = useNavigate();
@@ -23,6 +44,8 @@ const NewJobPost = () => {
     location: '',
     requirements: ''
   });
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -57,16 +80,13 @@ const NewJobPost = () => {
         requirements: formData.requirements.trim()
       };
 
-      console.log('Sending data:', formattedData);
-
       await axios.post(`${APP_URL}/jobs`, formattedData, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      navigate('/recruiter-dashboard/jobs');
+      navigate('/recruiter-dashboard/all-jobs');
     } catch (err) {
-      console.error('Error response:', err.response?.data);
       setError(err.response?.data?.message || 'Something went wrong');
     } finally {
       setLoading(false);
@@ -74,130 +94,152 @@ const NewJobPost = () => {
   };
 
   return (
-    <div className="job-post-container">
-      <h2>Create New Job Posting</h2>
-      {error && <div className="error-message">{error}</div>}
-      
-      <form onSubmit={handleSubmit} className="job-form">
-        <div className="form-group">
-          <label>Job Title</label>
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-            placeholder="e.g. Senior Software Engineer"
-          />
-        </div>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Typography variant="h4" gutterBottom>
+        Create New Job Posting
+      </Typography>
 
-        <div className="form-group">
-          <label>Position</label>
-          <input
-            type="text"
-            name="position"
-            value={formData.position}
-            onChange={handleChange}
-            required
-            placeholder="e.g. Full Stack Developer"
-          />
-        </div>
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
-        <div className="form-group">
-          <label>Description</label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            required
-            placeholder="Job description and requirements..."
-            rows="6"
-          />
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label>Experience (Years)</label>
-            <div className="range-inputs">
-              <input
-                type="number"
+      <StyledPaper>
+        <form onSubmit={handleSubmit}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Job Title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                required
+                placeholder="e.g. Senior Software Engineer"
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Position"
+                name="position"
+                value={formData.position}
+                onChange={handleChange}
+                required
+                placeholder="e.g. Full Stack Developer"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                required
+                placeholder="Job description and requirements..."
+                multiline
+                rows={4}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Minimum Experience (Years)"
                 name="experience.min"
+                type="number"
                 value={formData.experience.min}
                 onChange={handleChange}
                 required
                 placeholder="Min"
-                min="0"
+                inputProps={{ min: 0 }}
               />
-              <span>to</span>
-              <input
-                type="number"
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Maximum Experience (Years)"
                 name="experience.max"
+                type="number"
                 value={formData.experience.max}
                 onChange={handleChange}
                 required
                 placeholder="Max"
-                min="0"
+                inputProps={{ min: 0 }}
               />
-            </div>
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label>Salary Range (₹)</label>
-            <div className="range-inputs">
-              <input
-                type="number"
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Minimum Salary (₹)"
                 name="salary.min"
+                type="number"
                 value={formData.salary.min}
                 onChange={handleChange}
                 required
                 placeholder="Min"
-                min="0"
+                inputProps={{ min: 0 }}
               />
-              <span>to</span>
-              <input
-                type="number"
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Maximum Salary (₹)"
                 name="salary.max"
+                type="number"
                 value={formData.salary.max}
                 onChange={handleChange}
                 required
                 placeholder="Max"
-                min="0"
+                inputProps={{ min: 0 }}
               />
-            </div>
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label>Location</label>
-          <input
-            type="text"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            required
-            placeholder="e.g. Bangalore, India"
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Requirements</label>
-          <textarea
-            name="requirements"
-            value={formData.requirements}
-            onChange={handleChange}
-            required
-            placeholder="List the key requirements for this position..."
-            rows="4"
-          />
-        </div>
-
-        <button type="submit" disabled={loading}>
-          {loading ? 'Creating...' : 'Create Job Post'}
-        </button>
-      </form>
-    </div>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Location"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                required
+                placeholder="e.g. Bangalore, India"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Requirements"
+                name="requirements"
+                value={formData.requirements}
+                onChange={handleChange}
+                required
+                placeholder="List the key requirements for this position..."
+                multiline
+                rows={4}
+              />
+            </Grid>
+          </Grid>
+          <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+            <Button
+              variant="outlined"
+              startIcon={<CancelIcon />}
+              onClick={() => navigate('/recruiter-dashboard/all-jobs')}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              startIcon={<SaveIcon />}
+              disabled={loading}
+            >
+              {loading ? 'Creating...' : 'Create Job Post'}
+            </Button>
+          </Box>
+        </form>
+      </StyledPaper>
+    </Box>
   );
 };
 
