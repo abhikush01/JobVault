@@ -1,0 +1,278 @@
+{
+  "jobs": {
+    "POST /api/jobs": {
+      "description": "Create a new job posting",
+      "requiresAuth": true,
+      "role": "recruiter",
+      "sampleRequest": {
+        "title": "Senior Software Engineer",
+        "company": "Tech Corp",
+        "location": "San Francisco, CA",
+        "type": "Full-time",
+        "description": "We are looking for an experienced software engineer...",
+        "requirements": "5+ years of experience in React, Node.js...",
+        "salary": {
+          "min": 120000,
+          "max": 180000
+        },
+        "skills": ["React", "Node.js", "MongoDB"],
+        "deadline": "2024-12-31",
+        "experienceLevel": "Senior",
+        "benefits": ["Health Insurance", "401k", "Remote Work"],
+        "workSchedule": "9 AM - 5 PM EST",
+        "isRemote": true
+      }
+    },
+    "GET /api/jobs": {
+      "description": "Get all job postings with filters",
+      "requiresAuth": false,
+      "queryParams": {
+        "page": "1",
+        "limit": "10",
+        "search": "software",
+        "location": "San Francisco",
+        "type": "Full-time",
+        "experienceLevel": "Senior",
+        "salary": "120000",
+        "skills": "React,Node.js",
+        "isRemote": "true",
+        "sortBy": "latest"
+      }
+    },
+    "GET /api/jobs/:id": {
+      "description": "Get specific job posting details",
+      "requiresAuth": false,
+      "urlParams": {
+        "id": "507f1f77bcf86cd799439011"
+      }
+    },
+    "PUT /api/jobs/:id": {
+      "description": "Update a job posting",
+      "requiresAuth": true,
+      "role": "recruiter",
+      "urlParams": {
+        "id": "507f1f77bcf86cd799439011"
+      },
+      "sampleRequest": {
+        "title": "Updated Job Title",
+        "description": "Updated job description...",
+        "requirements": "Updated requirements...",
+        "salary": {
+          "min": 130000,
+          "max": 190000
+        }
+      }
+    },
+    "DELETE /api/jobs/:id": {
+      "description": "Delete a job posting",
+      "requiresAuth": true,
+      "role": "recruiter",
+      "urlParams": {
+        "id": "507f1f77bcf86cd799439011"
+      }
+    },
+    "GET /api/jobs/company/:companyId": {
+      "description": "Get all jobs posted by a company",
+      "requiresAuth": false,
+      "urlParams": {
+        "companyId": "507f1f77bcf86cd799439011"
+      },
+      "queryParams": {
+        "page": "1",
+        "limit": "10",
+        "status": "active"
+      }
+    }
+  },
+  "applications": {
+    "POST /api/jobs/:jobId/apply": {
+      "description": "Submit a job application",
+      "requiresAuth": true,
+      "role": "jobseeker",
+      "urlParams": {
+        "jobId": "507f1f77bcf86cd799439011"
+      },
+      "sampleRequest": {
+        "coverLetter": "I am writing to express my interest...",
+        "resume": "base64EncodedResumeFile",
+        "portfolio": "https://portfolio.com",
+        "expectedSalary": 150000,
+        "availability": "2 weeks notice",
+        "references": [
+          {
+            "name": "John Smith",
+            "position": "Previous Manager",
+            "contact": "john@company.com"
+          }
+        ]
+      }
+    },
+    "GET /api/applications": {
+      "description": "Get all applications (for recruiter)",
+      "requiresAuth": true,
+      "role": "recruiter",
+      "queryParams": {
+        "page": "1",
+        "limit": "10",
+        "status": "pending",
+        "jobId": "507f1f77bcf86cd799439011",
+        "sortBy": "latest"
+      }
+    },
+    "GET /api/applications/jobseeker": {
+      "description": "Get all applications for a jobseeker",
+      "requiresAuth": true,
+      "role": "jobseeker",
+      "queryParams": {
+        "page": "1",
+        "limit": "10",
+        "status": "all"
+      }
+    },
+    "GET /api/applications/:id": {
+      "description": "Get specific application details",
+      "requiresAuth": true,
+      "urlParams": {
+        "id": "507f1f77bcf86cd799439011"
+      }
+    },
+    "PUT /api/applications/:id/status": {
+      "description": "Update application status",
+      "requiresAuth": true,
+      "role": "recruiter",
+      "urlParams": {
+        "id": "507f1f77bcf86cd799439011"
+      },
+      "sampleRequest": {
+        "status": "accepted",
+        "feedback": "We would like to proceed with your application...",
+        "interviewDate": "2024-04-01T10:00:00Z"
+      }
+    },
+    "DELETE /api/applications/:id": {
+      "description": "Withdraw job application",
+      "requiresAuth": true,
+      "role": "jobseeker",
+      "urlParams": {
+        "id": "507f1f77bcf86cd799439011"
+      }
+    }
+  },
+  "recruiters": {
+    "POST /api/recruiters/register": {
+      "description": "Register a new recruiter",
+      "requiresAuth": false,
+      "sampleRequest": {
+        "name": "John Doe",
+        "email": "john@techcorp.com",
+        "password": "securePassword123",
+        "company": "Tech Corp",
+        "position": "HR Manager",
+        "phone": "+1234567890",
+        "companySize": "100-500",
+        "industry": "Technology",
+        "companyWebsite": "https://techcorp.com"
+      }
+    },
+    "POST /api/recruiters/login": {
+      "description": "Login for recruiter",
+      "requiresAuth": false,
+      "sampleRequest": {
+        "email": "john@techcorp.com",
+        "password": "securePassword123"
+      }
+    },
+    "GET /api/recruiters/profile": {
+      "description": "Get recruiter profile",
+      "requiresAuth": true,
+      "role": "recruiter"
+    },
+    "PUT /api/recruiters/profile": {
+      "description": "Update recruiter profile",
+      "requiresAuth": true,
+      "role": "recruiter",
+      "sampleRequest": {
+        "name": "John Doe Updated",
+        "company": "New Tech Corp",
+        "position": "Senior HR Manager",
+        "phone": "+1987654321",
+        "companySize": "500-1000",
+        "industry": "Technology"
+      }
+    }
+  },
+  "jobseekers": {
+    "POST /api/jobseekers/register": {
+      "description": "Register a new jobseeker",
+      "requiresAuth": false,
+      "sampleRequest": {
+        "name": "Jane Smith",
+        "email": "jane@email.com",
+        "password": "securePassword123",
+        "phone": "+1234567890",
+        "currentTitle": "Software Developer",
+        "experience": "5",
+        "skills": ["JavaScript", "React", "Node.js"],
+        "education": [
+          {
+            "degree": "Bachelor's in Computer Science",
+            "institution": "University of Technology",
+            "year": "2020"
+          }
+        ]
+      }
+    },
+    "POST /api/jobseekers/login": {
+      "description": "Login for jobseeker",
+      "requiresAuth": false,
+      "sampleRequest": {
+        "email": "jane@email.com",
+        "password": "securePassword123"
+      }
+    },
+    "GET /api/jobseekers/profile": {
+      "description": "Get jobseeker profile",
+      "requiresAuth": true,
+      "role": "jobseeker"
+    },
+    "PUT /api/jobseekers/profile": {
+      "description": "Update jobseeker profile",
+      "requiresAuth": true,
+      "role": "jobseeker",
+      "sampleRequest": {
+        "name": "Jane Smith Updated",
+        "phone": "+1987654321",
+        "currentTitle": "Senior Software Developer",
+        "experience": "6",
+        "skills": ["JavaScript", "React", "Node.js", "Python"],
+        "resume": "base64EncodedResumeFile",
+        "portfolio": "https://portfolio.com"
+      }
+    },
+    "GET /api/jobseekers/saved-jobs": {
+      "description": "Get all saved jobs",
+      "requiresAuth": true,
+      "role": "jobseeker",
+      "queryParams": {
+        "page": "1",
+        "limit": "10"
+      }
+    },
+    "POST /api/jobseekers/saved-jobs/:jobId": {
+      "description": "Save a job",
+      "requiresAuth": true,
+      "role": "jobseeker",
+      "urlParams": {
+        "jobId": "507f1f77bcf86cd799439011"
+      }
+    },
+    "DELETE /api/jobseekers/saved-jobs/:jobId": {
+      "description": "Remove a saved job",
+      "requiresAuth": true,
+      "role": "jobseeker",
+      "urlParams": {
+        "jobId": "507f1f77bcf86cd799439011"
+      }
+    }
+  }
+} 
