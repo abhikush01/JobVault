@@ -1,12 +1,12 @@
-import {createRoot} from 'react-dom/client';
-import {BrowserRouter, Rote} from 'react-router'
-import App from './App'
+import { createRoot } from "react-dom/client";
+import { BrowserRouter, Routes } from "react-router-dom";
+import App from "./App";
 
-const container = document.getElementById('root');
+const container = document.getElementById("root");
 const root = createRoot(container);
 
 root.render(
-    <BrowserRouter>
-        <App />
-    </BrowserRouter>
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
 );

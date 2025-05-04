@@ -1,15 +1,15 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const RecruiterController = require('../controllers/RecruiterController');
-const auth = require('../middleware/Auth');
-const recruiterOnly = require('../middleware/RecruiterOnly');
+const RecruiterController = require("../controllers/RecruiterController");
+const auth = require("../middleware/Auth");
+const recruiterOnly = require("../middleware/RecruiterOnly");
 
 // All routes require authentication and recruiter role
 router.use(auth);
 router.use(recruiterOnly);
 
 // Profile routes
-router.get('recruiters/profile', RecruiterController.getProfile);
-router.put('recruiters/profile', RecruiterController.updateProfile);
+router.get("/profile", RecruiterController.getProfile);
+router.put("/profile", RecruiterController.updateProfile);
 
-module.exports = router; 
+module.exports = router;

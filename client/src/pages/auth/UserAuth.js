@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
-import axios from 'axios';
-import { APP_URL } from '../../lib/Constant';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { APP_URL } from "../../lib/Constant";
 import {
   Container,
   Paper,
@@ -18,24 +18,24 @@ import {
   IconButton,
   useTheme,
   useMediaQuery,
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 const AuthContainer = styled(Container)(({ theme }) => ({
-  minHeight: '100vh',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  minHeight: "100vh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   padding: theme.spacing(4),
 }));
 
 const AuthPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
-  width: '100%',
+  width: "100%",
   maxWidth: 600,
-  [theme.breakpoints.down('sm')]: {
+  [theme.breakpoints.down("sm")]: {
     padding: theme.spacing(3),
   },
 }));
@@ -43,46 +43,46 @@ const AuthPaper = styled(Paper)(({ theme }) => ({
 const UserAuth = () => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    otp: '',
-    name: '',
-    phoneNumber: '',
-    skills: '',
-    experience: '',
+    email: "",
+    password: "",
+    otp: "",
+    name: "",
+    phoneNumber: "",
+    skills: "",
+    experience: "",
     education: {
-      degree: '',
-      field: '',
-      institution: '',
-      year: ''
+      degree: "",
+      field: "",
+      institution: "",
+      year: "",
     },
-    location: ''
+    location: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const checkAuthStatus = async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (token) {
         try {
           const response = await axios.get(`${APP_URL}/auth/verify`, {
             headers: {
-              'Authorization': `Bearer ${token}`
-            }
+              Authorization: `Bearer ${token}`,
+            },
           });
-          
-          if (response.data.valid && response.data.role === 'user') {
-            navigate('/user-dashboard');
+
+          if (response.data.valid && response.data.role === "user") {
+            navigate("/user-dashboard");
           } else {
-            localStorage.removeItem('token');
+            localStorage.removeItem("token");
           }
         } catch (err) {
-          localStorage.removeItem('token');
+          localStorage.removeItem("token");
         }
       }
       setLoading(false);
@@ -93,35 +93,35 @@ const UserAuth = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name.includes('.')) {
-      const [parent, child] = name.split('.');
-      setFormData(prev => ({
+    if (name.includes(".")) {
+      const [parent, child] = name.split(".");
+      setFormData((prev) => ({
         ...prev,
         [parent]: {
           ...prev[parent],
-          [child]: value
-        }
+          [child]: value,
+        },
       }));
     } else {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        [name]: value
+        [name]: value,
       }));
     }
   };
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       await axios.post(`${APP_URL}/auth/user/signup`, {
-        email: formData.email
+        email: formData.email,
       });
       setStep(2);
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong');
+      setError(err.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -131,12 +131,12 @@ const UserAuth = () => {
     const { degree, field, institution, year } = formData.education;
     if (degree || field || institution || year) {
       if (!degree || !field || !institution || !year) {
-        setError('Please complete all education fields');
+        setError("Please complete all education fields");
         return false;
       }
       const currentYear = new Date().getFullYear();
       if (year < 1900 || year > currentYear) {
-        setError('Please enter a valid graduation year');
+        setError("Please enter a valid graduation year");
         return false;
       }
     }
@@ -145,7 +145,7 @@ const UserAuth = () => {
 
   const handleVerifyAndComplete = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     if (!validateEducation()) {
@@ -156,18 +156,23 @@ const UserAuth = () => {
     try {
       const requestData = {
         ...formData,
-        skills: formData.skills ? formData.skills.split(',').map(skill => skill.trim()).filter(Boolean) : []
+        skills: formData.skills
+          ? formData.skills
+              .split(",")
+              .map((skill) => skill.trim())
+              .filter(Boolean)
+          : [],
       };
 
       const response = await axios.post(
-        `${APP_URL}/auth/user/verify-and-complete`, 
+        `${APP_URL}/auth/user/verify-and-complete`,
         requestData
       );
-      
-      localStorage.setItem('token', response.data.token);
-      navigate('/user-dashboard');
+
+      localStorage.setItem("token", response.data.token);
+      navigate("/user-dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong');
+      setError(err.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -175,19 +180,19 @@ const UserAuth = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       const response = await axios.post(`${APP_URL}/auth/login`, {
         email: formData.email,
         password: formData.password,
-        role: 'user'
+        role: "user",
       });
-      localStorage.setItem('token', response.data.token);
-      navigate('/user-dashboard');
+      localStorage.setItem("token", response.data.token);
+      navigate("/user-dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials');
+      setError(err.response?.data?.message || "Invalid credentials");
     } finally {
       setLoading(false);
     }
@@ -195,7 +200,12 @@ const UserAuth = () => {
 
   if (loading && step === 1) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
         <CircularProgress />
       </Box>
     );
@@ -206,12 +216,15 @@ const UserAuth = () => {
       <AuthPaper elevation={3}>
         <Box textAlign="center" mb={4}>
           <Typography variant="h4" gutterBottom>
-            {step === 3 ? 'Welcome Back!' : 'Join Our Community'}
+            {step === 3 ? "Welcome Back!" : "Join Our Community"}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            {step === 1 && 'Start your journey with us. Create an account to explore job opportunities.'}
-            {step === 2 && 'Tell us more about yourself to help you find the perfect job match.'}
-            {step === 3 && 'Sign in to access your dashboard and continue your job search.'}
+            {step === 1 &&
+              "Start your journey with us. Create an account to explore job opportunities."}
+            {step === 2 &&
+              "Tell us more about yourself to help you find the perfect job match."}
+            {step === 3 &&
+              "Sign in to access your dashboard and continue your job search."}
           </Typography>
         </Box>
 
@@ -252,15 +265,15 @@ const UserAuth = () => {
               disabled={loading}
               sx={{ mt: 3 }}
             >
-              {loading ? 'Sending OTP...' : 'Get Started'}
+              {loading ? "Sending OTP..." : "Get Started"}
             </Button>
             <Box textAlign="center" mt={2}>
               <Typography variant="body2">
-                Already have an account?{' '}
+                Already have an account?{" "}
                 <Button
                   color="primary"
                   onClick={() => setStep(3)}
-                  sx={{ textTransform: 'none' }}
+                  sx={{ textTransform: "none" }}
                 >
                   Sign In
                 </Button>
@@ -284,7 +297,7 @@ const UserAuth = () => {
               fullWidth
               label="Create Password"
               name="password"
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               value={formData.password}
               onChange={handleChange}
               required
@@ -296,7 +309,11 @@ const UserAuth = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
                     >
-                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      {showPassword ? (
+                        <VisibilityOffIcon />
+                      ) : (
+                        <VisibilityIcon />
+                      )}
                     </IconButton>
                   </InputAdornment>
                 ),
@@ -392,7 +409,7 @@ const UserAuth = () => {
               disabled={loading}
               sx={{ mt: 3 }}
             >
-              {loading ? 'Creating Account...' : 'Complete Registration'}
+              {loading ? "Creating Account..." : "Complete Registration"}
             </Button>
           </form>
         )}
@@ -413,7 +430,7 @@ const UserAuth = () => {
               fullWidth
               label="Password"
               name="password"
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               value={formData.password}
               onChange={handleChange}
               required
@@ -425,7 +442,11 @@ const UserAuth = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
                     >
-                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      {showPassword ? (
+                        <VisibilityOffIcon />
+                      ) : (
+                        <VisibilityIcon />
+                      )}
                     </IconButton>
                   </InputAdornment>
                 ),
@@ -439,15 +460,15 @@ const UserAuth = () => {
               disabled={loading}
               sx={{ mt: 3 }}
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? "Logging in..." : "Login"}
             </Button>
             <Box textAlign="center" mt={2}>
               <Typography variant="body2">
-                Don't have an account?{' '}
+                Don't have an account?{" "}
                 <Button
                   color="primary"
                   onClick={() => setStep(1)}
-                  sx={{ textTransform: 'none' }}
+                  sx={{ textTransform: "none" }}
                 >
                   Sign Up
                 </Button>

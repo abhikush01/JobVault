@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router';
-import axios from 'axios';
-import { APP_URL } from '../../../lib/Constant';
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import { APP_URL } from "../../../lib/Constant";
 import {
   Box,
   Paper,
@@ -13,7 +13,7 @@ import {
   Card,
   CardContent,
   useTheme,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Timeline,
   TimelineItem,
@@ -21,7 +21,7 @@ import {
   TimelineConnector,
   TimelineContent,
   TimelineDot,
-} from '@mui/lab';
+} from "@mui/lab";
 import {
   Work,
   LocationOn,
@@ -30,17 +30,17 @@ import {
   CheckCircle,
   Pending,
   Cancel,
-} from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
+} from "@mui/icons-material";
+import { styled } from "@mui/material/styles";
 
 const StatusChip = styled(Chip)(({ theme, status }) => {
   const getStatusColor = () => {
     switch (status?.toLowerCase()) {
-      case 'accepted':
+      case "accepted":
         return theme.palette.success;
-      case 'rejected':
+      case "rejected":
         return theme.palette.error;
-      case 'pending':
+      case "pending":
         return theme.palette.warning;
       default:
         return theme.palette.info;
@@ -50,17 +50,17 @@ const StatusChip = styled(Chip)(({ theme, status }) => {
   return {
     backgroundColor: statusColor.light,
     color: statusColor.dark,
-    '& .MuiChip-label': {
+    "& .MuiChip-label": {
       fontWeight: 600,
     },
   };
 });
 
 const InfoItem = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
+  display: "flex",
+  alignItems: "center",
   marginBottom: theme.spacing(2),
-  '& .MuiSvgIcon-root': {
+  "& .MuiSvgIcon-root": {
     marginRight: theme.spacing(1),
     color: theme.palette.primary.main,
   },
@@ -76,15 +76,20 @@ const UserApplicationDetails = () => {
   useEffect(() => {
     const fetchApplicationDetails = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${APP_URL}/jobseekers/applications/${id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          `${APP_URL}/jobseekers/applications/${id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         setApplication(response.data.application);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching application details:', error);
-        setError(error.response?.data?.message || 'Failed to load application details');
+        console.error("Error fetching application details:", error);
+        setError(
+          error.response?.data?.message || "Failed to load application details"
+        );
         setLoading(false);
       }
     };
@@ -94,7 +99,12 @@ const UserApplicationDetails = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
         <CircularProgress />
       </Box>
     );
@@ -118,11 +128,11 @@ const UserApplicationDetails = () => {
 
   const getStatusIcon = (status) => {
     switch (status?.toLowerCase()) {
-      case 'accepted':
+      case "accepted":
         return <CheckCircle color="success" />;
-      case 'rejected':
+      case "rejected":
         return <Cancel color="error" />;
-      case 'pending':
+      case "pending":
         return <Pending color="warning" />;
       default:
         return <Pending />;
@@ -148,26 +158,36 @@ const UserApplicationDetails = () => {
               </InfoItem>
               <InfoItem>
                 <LocationOn />
-                <Typography>{application.job?.location || 'Remote'}</Typography>
+                <Typography>{application.job?.location || "Remote"}</Typography>
               </InfoItem>
               <InfoItem>
                 <CalendarToday />
                 <Typography>
-                  Applied on: {new Date(application.appliedDate).toLocaleDateString()}
+                  Applied on:{" "}
+                  {new Date(application.appliedDate).toLocaleDateString()}
                 </Typography>
               </InfoItem>
               <InfoItem>
                 <Work />
-                <Typography>{application.job?.type || 'Full Time'}</Typography>
+                <Typography>{application.job?.type || "Full Time"}</Typography>
               </InfoItem>
             </Box>
           </Grid>
-          <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+          <Grid
+            item
+            xs={12}
+            md={4}
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-start",
+            }}
+          >
             <StatusChip
               label={application.status}
               status={application.status}
               icon={getStatusIcon(application.status)}
-              sx={{ px: 3, py: 2, '& .MuiChip-label': { fontSize: '1.1rem' } }}
+              sx={{ px: 3, py: 2, "& .MuiChip-label": { fontSize: "1.1rem" } }}
             />
           </Grid>
         </Grid>
@@ -189,17 +209,25 @@ const UserApplicationDetails = () => {
                     <TimelineConnector />
                   </TimelineSeparator>
                   <TimelineContent>
-                    <Typography variant="subtitle1">Application Submitted</Typography>
+                    <Typography variant="subtitle1">
+                      Application Submitted
+                    </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {new Date(application.appliedDate).toLocaleDateString()}
                     </Typography>
                   </TimelineContent>
                 </TimelineItem>
 
-                {application.status !== 'Pending' && (
+                {application.status !== "Pending" && (
                   <TimelineItem>
                     <TimelineSeparator>
-                      <TimelineDot color={application.status === 'Accepted' ? 'success' : 'error'}>
+                      <TimelineDot
+                        color={
+                          application.status === "Accepted"
+                            ? "success"
+                            : "error"
+                        }
+                      >
                         {getStatusIcon(application.status)}
                       </TimelineDot>
                     </TimelineSeparator>
@@ -225,7 +253,7 @@ const UserApplicationDetails = () => {
                 <Typography variant="h6" gutterBottom>
                   Recruiter Feedback
                 </Typography>
-                <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
+                <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>
                   {application.feedback}
                 </Typography>
               </CardContent>
@@ -234,13 +262,13 @@ const UserApplicationDetails = () => {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          {application.status === 'Accepted' && application.nextSteps && (
-            <Card sx={{ bgcolor: 'success.light' }}>
+          {application.status === "Accepted" && application.nextSteps && (
+            <Card sx={{ bgcolor: "success.light" }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
                   Next Steps
                 </Typography>
-                <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
+                <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>
                   {application.nextSteps}
                 </Typography>
               </CardContent>
@@ -262,7 +290,7 @@ const UserApplicationDetails = () => {
                   <Typography variant="subtitle2" gutterBottom>
                     Required Skills
                   </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                     {application.job.skills.map((skill, index) => (
                       <Chip
                         key={index}

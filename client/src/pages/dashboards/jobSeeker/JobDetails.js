@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router';
-import axios from 'axios';
-import { APP_URL } from '../../../lib/Constant';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { APP_URL } from "../../../lib/Constant";
 import {
   Box,
   Paper,
@@ -15,21 +15,21 @@ import {
   useTheme,
   Card,
   CardContent,
-} from '@mui/material';
+} from "@mui/material";
 import {
   LocationOn,
   Business,
   AttachMoney,
   Schedule,
   CheckCircle,
-} from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
+} from "@mui/icons-material";
+import { styled } from "@mui/material/styles";
 
 const DetailItem = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
+  display: "flex",
+  alignItems: "center",
   marginBottom: theme.spacing(2),
-  '& .MuiSvgIcon-root': {
+  "& .MuiSvgIcon-root": {
     marginRight: theme.spacing(1),
     color: theme.palette.primary.main,
   },
@@ -49,26 +49,26 @@ const JobDetails = () => {
   useEffect(() => {
     const fetchJobAndApplicationStatus = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         if (!token) {
-          navigate('/user-auth');
+          navigate("/user-auth");
           return;
         }
 
         const [jobResponse, applicationResponse] = await Promise.all([
           axios.get(`${APP_URL}/jobseekers/jobs/${id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           }),
           axios.get(`${APP_URL}/jobseekers/jobs/${id}/check-application`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
+            headers: { Authorization: `Bearer ${token}` },
+          }),
         ]);
 
         setJob(jobResponse.data.job);
         setHasApplied(applicationResponse.data.hasApplied);
       } catch (error) {
-        console.error('Error fetching job details:', error);
-        setError(error.response?.data?.message || 'Failed to load job details');
+        console.error("Error fetching job details:", error);
+        setError(error.response?.data?.message || "Failed to load job details");
       } finally {
         setLoading(false);
       }
@@ -83,9 +83,9 @@ const JobDetails = () => {
     setApplying(true);
     setApplicationError(null);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        navigate('/user-auth');
+        navigate("/user-auth");
         return;
       }
 
@@ -93,21 +93,21 @@ const JobDetails = () => {
         `${APP_URL}/jobseekers/jobs/${id}/apply`,
         {},
         {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
-      
+
       setHasApplied(true);
-      navigate('/user-dashboard/applications');
+      navigate("/user-dashboard/applications");
     } catch (error) {
-      console.error('Error applying for job:', error);
+      console.error("Error applying for job:", error);
       if (error.response?.status === 409) {
-        setApplicationError('You have already applied for this job');
+        setApplicationError("You have already applied for this job");
         setHasApplied(true);
       } else {
         setApplicationError(
-          error.response?.data?.message || 
-          'Failed to submit application. Please try again.'
+          error.response?.data?.message ||
+            "Failed to submit application. Please try again."
         );
       }
     } finally {
@@ -117,7 +117,12 @@ const JobDetails = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
         <CircularProgress />
       </Box>
     );
@@ -158,19 +163,34 @@ const JobDetails = () => {
               </DetailItem>
               <DetailItem>
                 <LocationOn />
-                <Typography variant="body1">{job.location || 'Remote'}</Typography>
+                <Typography variant="body1">
+                  {job.location || "Remote"}
+                </Typography>
               </DetailItem>
               <DetailItem>
                 <AttachMoney />
-                <Typography variant="body1">{job.salary || 'Competitive'}</Typography>
+                <Typography variant="body1">
+                  {job.salary || "Competitive"}
+                </Typography>
               </DetailItem>
               <DetailItem>
                 <Schedule />
-                <Typography variant="body1">{job.type || 'Full Time'}</Typography>
+                <Typography variant="body1">
+                  {job.type || "Full Time"}
+                </Typography>
               </DetailItem>
             </Box>
           </Grid>
-          <Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+          <Grid
+            item
+            xs={12}
+            md={4}
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "flex-start",
+            }}
+          >
             <Button
               variant="contained"
               color={hasApplied ? "success" : "primary"}
@@ -181,7 +201,7 @@ const JobDetails = () => {
               startIcon={hasApplied && <CheckCircle />}
               sx={{ maxWidth: 300 }}
             >
-              {applying ? 'Applying...' : hasApplied ? 'Applied' : 'Apply Now'}
+              {applying ? "Applying..." : hasApplied ? "Applied" : "Apply Now"}
             </Button>
           </Grid>
         </Grid>
@@ -221,11 +241,7 @@ const JobDetails = () => {
                   </Typography>
                   <Box sx={{ mt: 2 }}>
                     {job.skills.map((skill, index) => (
-                      <Chip
-                        key={index}
-                        label={skill}
-                        sx={{ mr: 1, mb: 1 }}
-                      />
+                      <Chip key={index} label={skill} sx={{ mr: 1, mb: 1 }} />
                     ))}
                   </Box>
                 </>
@@ -240,7 +256,8 @@ const JobDetails = () => {
                 Company Overview
               </Typography>
               <Typography variant="body2" color="text.secondary" paragraph>
-                {job.companyDescription || `Join ${job.company} and be part of an innovative team working on exciting projects.`}
+                {job.companyDescription ||
+                  `Join ${job.company} and be part of an innovative team working on exciting projects.`}
               </Typography>
             </CardContent>
           </Card>

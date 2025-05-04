@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router';
-import axios from 'axios';
-import { APP_URL } from '../../../lib/Constant';
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import { APP_URL } from "../../../lib/Constant";
 import {
   Box,
   Typography,
@@ -28,7 +28,7 @@ import {
   Alert,
   useTheme,
   useMediaQuery,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Search as SearchIcon,
   FilterList as FilterIcon,
@@ -37,23 +37,27 @@ import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   AccessTime as AccessTimeIcon,
-} from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
+} from "@mui/icons-material";
+import { styled } from "@mui/material/styles";
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
+  "&:nth-of-type(odd)": {
     backgroundColor: theme.palette.action.hover,
   },
-  '&:last-child td, &:last-child th': {
+  "&:last-child td, &:last-child th": {
     border: 0,
   },
 }));
 
 const StatusChip = styled(Chip)(({ theme, status }) => ({
-  backgroundColor: status === 'pending' ? theme.palette.warning.light :
-    status === 'accepted' ? theme.palette.success.light :
-    status === 'rejected' ? theme.palette.error.light :
-    theme.palette.info.light,
+  backgroundColor:
+    status === "pending"
+      ? theme.palette.warning.light
+      : status === "accepted"
+      ? theme.palette.success.light
+      : status === "rejected"
+      ? theme.palette.error.light
+      : theme.palette.info.light,
   color: theme.palette.common.white,
 }));
 
@@ -61,18 +65,18 @@ const Applications = () => {
   const { jobId } = useParams();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [updatingStatus, setUpdatingStatus] = useState(null);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState("");
   const [filters, setFilters] = useState({
-    search: '',
-    status: '',
-    experience: ''
+    search: "",
+    status: "",
+    experience: "",
   });
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
     fetchApplications();
@@ -81,37 +85,43 @@ const Applications = () => {
   const fetchApplications = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        throw new Error('Authentication token not found');
+        throw new Error("Authentication token not found");
       }
 
-      console.log('Fetching applications for job:', jobId); // Debug log
-      const response = await axios.get(`${APP_URL}/jobs/${jobId}/applications`, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      console.log("Fetching applications for job:", jobId); // Debug log
+      const response = await axios.get(
+        `${APP_URL}/applications/job/${jobId}/applications`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
 
-      console.log('Response data:', response.data); // Debug log
-      
+      console.log("Response data:", response.data); // Debug log
+
       if (response.data && response.data.applications) {
-        console.log('Applications found:', response.data.applications.length); // Debug log
+        console.log("Applications found:", response.data.applications.length); // Debug log
         setApplications(response.data.applications);
       } else if (response.data && response.data.count === 0) {
-        console.log('No applications found for this job'); // Debug log
+        console.log("No applications found for this job"); // Debug log
         setApplications([]);
       } else {
-        console.log('Unexpected response format:', response.data); // Debug log
+        console.log("Unexpected response format:", response.data); // Debug log
         setApplications([]);
       }
-      setError('');
+      setError("");
     } catch (err) {
-      console.error('Error fetching applications:', err);
-      console.error('Error response:', err.response); // Debug log
-      console.error('Error message:', err.message); // Debug log
-      setError(err.response?.data?.message || 'Failed to fetch applications. Please try again.');
+      console.error("Error fetching applications:", err);
+      console.error("Error response:", err.response); // Debug log
+      console.error("Error message:", err.message); // Debug log
+      setError(
+        err.response?.data?.message ||
+          "Failed to fetch applications. Please try again."
+      );
       setApplications([]);
     } finally {
       setLoading(false);
@@ -121,20 +131,20 @@ const Applications = () => {
   const handleStatusChange = async (applicationId, newStatus) => {
     setUpdatingStatus(applicationId);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       await axios.patch(
         `${APP_URL}/jobs/${jobId}/applications/${applicationId}/status`,
         { status: newStatus },
         {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
       );
       fetchApplications();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update status');
+      setError(err.response?.data?.message || "Failed to update status");
     } finally {
       setUpdatingStatus(null);
     }
@@ -144,33 +154,38 @@ const Applications = () => {
     if (!selectedApplication || !comment.trim()) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       await axios.post(
         `${APP_URL}/jobs/${jobId}/applications/${selectedApplication._id}/comment`,
         { comment: comment.trim() },
         {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
       );
-      setComment('');
+      setComment("");
       setCommentDialogOpen(false);
       fetchApplications();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send comment');
+      setError(err.response?.data?.message || "Failed to send comment");
     }
   };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
+    setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
         <CircularProgress />
       </Box>
     );
@@ -189,7 +204,7 @@ const Applications = () => {
       )}
 
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
           <TextField
             size="small"
             placeholder="Search applicants..."
@@ -247,9 +262,11 @@ const Applications = () => {
             {applications.length > 0 ? (
               applications.map((application) => (
                 <StyledTableRow key={application._id}>
-                  <TableCell>{application.applicant?.name || 'N/A'}</TableCell>
-                  <TableCell>{application.applicant?.email || 'N/A'}</TableCell>
-                  <TableCell>{application.applicant?.experience || 'N/A'} years</TableCell>
+                  <TableCell>{application.applicant?.name || "N/A"}</TableCell>
+                  <TableCell>{application.applicant?.email || "N/A"}</TableCell>
+                  <TableCell>
+                    {application.applicant?.experience || "N/A"} years
+                  </TableCell>
                   <TableCell>
                     <StatusChip
                       label={application.status}
@@ -260,7 +277,7 @@ const Applications = () => {
                     {new Date(application.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ display: "flex", gap: 1 }}>
                       <IconButton
                         size="small"
                         onClick={() => {
@@ -273,7 +290,9 @@ const Applications = () => {
                       <IconButton
                         size="small"
                         color="success"
-                        onClick={() => handleStatusChange(application._id, 'accepted')}
+                        onClick={() =>
+                          handleStatusChange(application._id, "accepted")
+                        }
                         disabled={updatingStatus === application._id}
                       >
                         <CheckCircleIcon />
@@ -281,7 +300,9 @@ const Applications = () => {
                       <IconButton
                         size="small"
                         color="error"
-                        onClick={() => handleStatusChange(application._id, 'rejected')}
+                        onClick={() =>
+                          handleStatusChange(application._id, "rejected")
+                        }
                         disabled={updatingStatus === application._id}
                       >
                         <CancelIcon />
@@ -301,7 +322,10 @@ const Applications = () => {
         </Table>
       </TableContainer>
 
-      <Dialog open={commentDialogOpen} onClose={() => setCommentDialogOpen(false)}>
+      <Dialog
+        open={commentDialogOpen}
+        onClose={() => setCommentDialogOpen(false)}
+      >
         <DialogTitle>Send Comment to Applicant</DialogTitle>
         <DialogContent>
           <TextField

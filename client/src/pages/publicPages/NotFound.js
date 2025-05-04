@@ -1,5 +1,5 @@
-import React from 'react'
-import { Link } from 'react-router'
+import React from "react";
+import { Link } from "react-router-dom";
 const NotFound = () => {
   return (
     <div>
@@ -8,7 +8,7 @@ const NotFound = () => {
       <p>Sorry, we couldn't find the page you're looking for.</p>
       <Link to="/">Go back home</Link>
     </div>
-  )
-}
+  );
+};
 
-export default NotFound
+export default NotFound;

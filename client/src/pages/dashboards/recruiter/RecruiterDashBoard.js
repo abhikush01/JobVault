@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router';
-import axios from 'axios';
-import { APP_URL } from '../../../lib/Constant';
+import React, { useState, useEffect } from "react";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
+import { APP_URL } from "../../../lib/Constant";
 import {
   Box,
   Drawer,
@@ -19,7 +19,7 @@ import {
   Divider,
   Avatar,
   Badge,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Menu as MenuIcon,
   Home as HomeIcon,
@@ -28,75 +28,75 @@ import {
   Person as PersonIcon,
   Logout as LogoutIcon,
   Notifications as NotificationsIcon,
-} from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
+} from "@mui/icons-material";
+import { styled } from "@mui/material/styles";
 
 const drawerWidth = 240;
 
-const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
+const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })(
   ({ theme, open }) => ({
     flexGrow: 1,
     padding: theme.spacing(3),
-    transition: theme.transitions.create('margin', {
+    transition: theme.transitions.create("margin", {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,
     }),
     marginLeft: `-${drawerWidth}px`,
     ...(open && {
-      transition: theme.transitions.create('margin', {
+      transition: theme.transitions.create("margin", {
         easing: theme.transitions.easing.easeOut,
         duration: theme.transitions.duration.enteringScreen,
       }),
       marginLeft: 0,
     }),
-  }),
+  })
 );
 
 const AppBarStyled = styled(AppBar, {
-  shouldForwardProp: (prop) => prop !== 'open',
+  shouldForwardProp: (prop) => prop !== "open",
 })(({ theme, open }) => ({
-  transition: theme.transitions.create(['margin', 'width'], {
+  transition: theme.transitions.create(["margin", "width"], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
   ...(open && {
     width: `calc(100% - ${drawerWidth}px)`,
     marginLeft: `${drawerWidth}px`,
-    transition: theme.transitions.create(['margin', 'width'], {
+    transition: theme.transitions.create(["margin", "width"], {
       easing: theme.transitions.easing.easeOut,
       duration: theme.transitions.duration.enteringScreen,
     }),
   }),
 }));
 
-const DrawerHeader = styled('div')(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
+const DrawerHeader = styled("div")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
   padding: theme.spacing(0, 1),
   ...theme.mixins.toolbar,
-  justifyContent: 'flex-end',
+  justifyContent: "flex-end",
 }));
 
 const RecruiterDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [open, setOpen] = useState(!isMobile);
   const [recruiter, setRecruiter] = useState(null);
 
   useEffect(() => {
     const fetchRecruiterData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem("token");
         const response = await axios.get(`${APP_URL}/recruiter/profile`, {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
         setRecruiter(response.data);
       } catch (error) {
-        console.error('Error fetching recruiter data:', error);
+        console.error("Error fetching recruiter data:", error);
         if (error.response?.status === 401) {
           handleLogout();
         }
@@ -111,26 +111,26 @@ const RecruiterDashboard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/recruiter-auth');
+    localStorage.removeItem("token");
+    navigate("/recruiter-auth");
   };
 
   const isActivePath = (path) => {
-    if (path === 'dashboard') {
-      return location.pathname === '/recruiter-dashboard';
+    if (path === "dashboard") {
+      return location.pathname === "/recruiter-dashboard";
     }
     return location.pathname.includes(path);
   };
 
   const menuItems = [
-    { text: 'Dashboard', icon: <HomeIcon />, path: '/' },
-    { text: 'Create Job', icon: <AddCircleIcon />, path: 'create-new-job' },
-    { text: 'View Jobs', icon: <WorkIcon />, path: 'all-jobs' },
-    { text: 'View Profile', icon: <PersonIcon />, path: 'profile' },
+    { text: "Dashboard", icon: <HomeIcon />, path: "/" },
+    { text: "Create Job", icon: <AddCircleIcon />, path: "create-new-job" },
+    { text: "View Jobs", icon: <WorkIcon />, path: "all-jobs" },
+    { text: "View Profile", icon: <PersonIcon />, path: "profile" },
   ];
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: "flex" }}>
       <AppBarStyled position="fixed" open={open}>
         <Toolbar>
           <IconButton
@@ -138,21 +138,21 @@ const RecruiterDashboard = () => {
             aria-label="open drawer"
             onClick={handleDrawerToggle}
             edge="start"
-            sx={{ mr: 2, ...(open && { display: 'none' }) }}
+            sx={{ mr: 2, ...(open && { display: "none" }) }}
           >
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             Aspire Match
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <IconButton color="inherit">
               <Badge badgeContent={4} color="error">
                 <NotificationsIcon />
               </Badge>
             </IconButton>
             <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
-              {recruiter?.name?.charAt(0) || 'R'}
+              {recruiter?.name?.charAt(0) || "R"}
             </Avatar>
           </Box>
         </Toolbar>
@@ -162,19 +162,19 @@ const RecruiterDashboard = () => {
         sx={{
           width: drawerWidth,
           flexShrink: 0,
-          '& .MuiDrawer-paper': {
+          "& .MuiDrawer-paper": {
             width: drawerWidth,
-            boxSizing: 'border-box',
+            boxSizing: "border-box",
           },
         }}
-        variant={isMobile ? 'temporary' : 'persistent'}
+        variant={isMobile ? "temporary" : "persistent"}
         anchor="left"
         open={open}
         onClose={handleDrawerToggle}
       >
         <DrawerHeader>
           <IconButton onClick={handleDrawerToggle}>
-            {theme.direction === 'ltr' ? <MenuIcon /> : <MenuIcon />}
+            {theme.direction === "ltr" ? <MenuIcon /> : <MenuIcon />}
           </IconButton>
         </DrawerHeader>
         <Divider />
@@ -189,15 +189,21 @@ const RecruiterDashboard = () => {
               }}
               selected={isActivePath(item.path)}
               sx={{
-                '&.Mui-selected': {
+                "&.Mui-selected": {
                   backgroundColor: theme.palette.primary.light,
-                  '&:hover': {
+                  "&:hover": {
                     backgroundColor: theme.palette.primary.light,
                   },
                 },
               }}
             >
-              <ListItemIcon sx={{ color: isActivePath(item.path) ? theme.palette.primary.main : 'inherit' }}>
+              <ListItemIcon
+                sx={{
+                  color: isActivePath(item.path)
+                    ? theme.palette.primary.main
+                    : "inherit",
+                }}
+              >
                 {item.icon}
               </ListItemIcon>
               <ListItemText primary={item.text} />
@@ -205,7 +211,7 @@ const RecruiterDashboard = () => {
           ))}
         </List>
         <Divider />
-        <Box sx={{ p: 2, mt: 'auto' }}>
+        <Box sx={{ p: 2, mt: "auto" }}>
           <Button
             fullWidth
             variant="contained"
@@ -222,7 +228,7 @@ const RecruiterDashboard = () => {
         <DrawerHeader />
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" gutterBottom>
-            Welcome back, {recruiter?.name || 'Recruiter'}! 👋
+            Welcome back, {recruiter?.name || "Recruiter"}! 👋
           </Typography>
           {recruiter?.companyName && (
             <Typography variant="subtitle1" color="text.secondary">

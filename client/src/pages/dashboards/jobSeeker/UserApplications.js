@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { APP_URL } from '../../../lib/Constant';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { APP_URL } from "../../../lib/Constant";
 import {
   Box,
   Typography,
@@ -27,10 +27,7 @@ import {
   Alert,
   useTheme,
   useMediaQuery,
-  Card,
-  CardContent,
-  Divider,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Search as SearchIcon,
   FilterList as FilterIcon,
@@ -38,38 +35,44 @@ import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   AccessTime as AccessTimeIcon,
-} from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
+  Work as WorkIcon,
+} from "@mui/icons-material";
+import { styled } from "@mui/material/styles";
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  '&:nth-of-type(odd)': {
+  "&:nth-of-type(odd)": {
     backgroundColor: theme.palette.action.hover,
   },
-  '&:last-child td, &:last-child th': {
+  "&:last-child td, &:last-child th": {
     border: 0,
   },
 }));
 
 const StatusChip = styled(Chip)(({ theme, status }) => ({
-  backgroundColor: status === 'pending' ? theme.palette.warning.light :
-    status === 'accepted' ? theme.palette.success.light :
-    status === 'rejected' ? theme.palette.error.light :
-    theme.palette.info.light,
+  backgroundColor:
+    status === "pending"
+      ? theme.palette.warning.light
+      : status === "accepted"
+      ? theme.palette.success.light
+      : status === "rejected"
+      ? theme.palette.error.light
+      : theme.palette.info.light,
   color: theme.palette.common.white,
 }));
 
 const UserApplications = () => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
-    search: '',
-    status: '',
+    search: "",
+    status: "",
+    type: "job", // job or referral
   });
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   useEffect(() => {
     fetchApplications();
@@ -77,14 +80,24 @@ const UserApplications = () => {
 
   const fetchApplications = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${APP_URL}/jobseekers/applications`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        params: filters
-      });
-      setApplications(response.data.applications);
+      const token = localStorage.getItem("token");
+      let response;
+
+      if (filters.type === "job") {
+        response = await axios.get(`${APP_URL}/jobseekers/applications`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { ...filters, type: "job" },
+        });
+        setApplications(response.data.applications || []);
+      } else {
+        response = await axios.get(`${APP_URL}/referrals/applications`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { ...filters, type: "referral" },
+        });
+        setApplications(response.data || []);
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch applications');
+      setError(err.response?.data?.message || "Failed to fetch applications");
     } finally {
       setLoading(false);
     }
@@ -92,12 +105,17 @@ const UserApplications = () => {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
+    setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
         <CircularProgress />
       </Box>
     );
@@ -106,7 +124,7 @@ const UserApplications = () => {
   return (
     <Box sx={{ p: { xs: 2, sm: 3 } }}>
       <Typography variant="h4" gutterBottom>
-        My Applications
+        {filters.type === "job" ? "Job Applications" : "Referral Applications"}
       </Typography>
 
       {error && (
@@ -116,10 +134,10 @@ const UserApplications = () => {
       )}
 
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
           <TextField
             size="small"
-            placeholder="Search jobs..."
+            placeholder={`Search ${filters.type} applications...`}
             value={filters.search}
             onChange={handleFilterChange}
             name="search"
@@ -141,6 +159,18 @@ const UserApplications = () => {
               <MenuItem value="rejected">Rejected</MenuItem>
             </Select>
           </FormControl>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Type</InputLabel>
+            <Select
+              value={filters.type}
+              onChange={handleFilterChange}
+              name="type"
+              label="Type"
+            >
+              <MenuItem value="job">Jobs</MenuItem>
+              <MenuItem value="referral">Referrals</MenuItem>
+            </Select>
+          </FormControl>
         </Box>
       </Paper>
 
@@ -148,27 +178,61 @@ const UserApplications = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Job Title</TableCell>
+              <TableCell>Title</TableCell>
               <TableCell>Company</TableCell>
+              {filters.type === "referral" && <TableCell>Referrer</TableCell>}
               <TableCell>Status</TableCell>
               <TableCell>Applied Date</TableCell>
+              {filters.type === "referral" && <TableCell>Deadline</TableCell>}
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {applications.map((application) => (
               <StyledTableRow key={application._id}>
-                <TableCell>{application.job.title}</TableCell>
-                <TableCell>{application.job.company}</TableCell>
+                <TableCell>
+                  {filters.type === "job"
+                    ? application?.job?.title || "N/A"
+                    : application?.referral?.jobTitle || "N/A"}
+                </TableCell>
+                <TableCell>
+                  {filters.type === "job"
+                    ? application?.job?.company || "N/A"
+                    : application?.referral?.company || "N/A"}
+                </TableCell>
+                {filters.type === "referral" && (
+                  <TableCell>
+                    {application?.referral?.referrerName || "N/A"}
+                  </TableCell>
+                )}
                 <TableCell>
                   <StatusChip
-                    label={application.status}
-                    status={application.status}
+                    label={
+                      filters.type === "job"
+                        ? application?.status || "N/A"
+                        : application?.referral?.status || "N/A"
+                    }
+                    status={
+                      filters.type === "job"
+                        ? application?.status || "N/A"
+                        : application?.referral?.status || "N/A"
+                    }
                   />
                 </TableCell>
                 <TableCell>
-                  {new Date(application.createdAt).toLocaleDateString()}
+                  {filters.type === "job"
+                    ? new Date(application?.createdAt).toLocaleDateString()
+                    : new Date(application?.appliedDate).toLocaleDateString()}
                 </TableCell>
+                {filters.type === "referral" && (
+                  <TableCell>
+                    {application?.referral?.deadline
+                      ? new Date(
+                          application.referral.deadline
+                        ).toLocaleDateString()
+                      : "N/A"}
+                  </TableCell>
+                )}
                 <TableCell>
                   <IconButton
                     size="small"
@@ -196,54 +260,111 @@ const UserApplications = () => {
         <DialogContent>
           {selectedApplication && (
             <Box sx={{ mt: 2 }}>
-              <Card sx={{ mb: 2 }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {selectedApplication.job.title}
-                  </Typography>
-                  <Typography color="text.secondary" gutterBottom>
-                    {selectedApplication.job.company}
-                  </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                    <StatusChip
-                      label={selectedApplication.status}
-                      status={selectedApplication.status}
-                    />
-                  </Box>
+              <Paper sx={{ p: 2, mb: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  {filters.type === "job"
+                    ? selectedApplication?.job?.title || "N/A"
+                    : selectedApplication?.referral?.jobTitle || "N/A"}
+                </Typography>
+                <Typography color="text.secondary" gutterBottom>
+                  {filters.type === "job"
+                    ? selectedApplication?.job?.company || "N/A"
+                    : selectedApplication?.referral?.company || "N/A"}
+                </Typography>
+                {filters.type === "referral" && (
+                  <>
+                    <Typography color="text.secondary" gutterBottom>
+                      Referrer:{" "}
+                      {selectedApplication?.referral?.referrerName || "N/A"}
+                    </Typography>
+                    <Typography color="text.secondary" gutterBottom>
+                      Referrer Email:{" "}
+                      {selectedApplication?.referral?.referrerEmail || "N/A"}
+                    </Typography>
+                  </>
+                )}
+                <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                  <StatusChip
+                    label={
+                      filters.type === "job"
+                        ? selectedApplication?.status || "N/A"
+                        : selectedApplication?.referral?.status || "N/A"
+                    }
+                    status={
+                      filters.type === "job"
+                        ? selectedApplication?.status || "N/A"
+                        : selectedApplication?.referral?.status || "N/A"
+                    }
+                  />
+                </Box>
+                <Typography variant="body2">
+                  Applied on:{" "}
+                  {filters.type === "job"
+                    ? new Date(
+                        selectedApplication?.createdAt
+                      ).toLocaleDateString()
+                    : new Date(
+                        selectedApplication?.appliedDate
+                      ).toLocaleDateString()}
+                </Typography>
+                {filters.type === "referral" && (
                   <Typography variant="body2">
-                    Applied on: {new Date(selectedApplication.createdAt).toLocaleDateString()}
+                    Deadline:{" "}
+                    {selectedApplication?.referral?.deadline
+                      ? new Date(
+                          selectedApplication.referral.deadline
+                        ).toLocaleDateString()
+                      : "N/A"}
                   </Typography>
-                </CardContent>
-              </Card>
+                )}
+              </Paper>
 
-              {selectedApplication.recruiterComment && (
-                <Card sx={{ mb: 2 }}>
-                  <CardContent>
+              {filters.type === "job" ? (
+                <>
+                  {selectedApplication?.recruiterComment && (
+                    <Paper sx={{ p: 2, mb: 2 }}>
+                      <Typography variant="h6" gutterBottom>
+                        Recruiter's Comment
+                      </Typography>
+                      <Typography variant="body1">
+                        {selectedApplication.recruiterComment}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mt: 1, display: "block" }}
+                      >
+                        Last updated:{" "}
+                        {selectedApplication?.updatedAt
+                          ? new Date(
+                              selectedApplication.updatedAt
+                            ).toLocaleDateString()
+                          : "N/A"}
+                      </Typography>
+                    </Paper>
+                  )}
+
+                  <Paper sx={{ p: 2 }}>
                     <Typography variant="h6" gutterBottom>
-                      Recruiter's Comment
+                      Your Application
                     </Typography>
-                    <Divider sx={{ mb: 2 }} />
-                    <Typography variant="body1">
-                      {selectedApplication.recruiterComment}
+                    <Typography variant="body1" paragraph>
+                      {selectedApplication?.coverLetter ||
+                        "No cover letter provided"}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                      Last updated: {new Date(selectedApplication.updatedAt).toLocaleDateString()}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              )}
-
-              <Card>
-                <CardContent>
+                  </Paper>
+                </>
+              ) : (
+                <Paper sx={{ p: 2 }}>
                   <Typography variant="h6" gutterBottom>
-                    Your Application
+                    Referrer's Message
                   </Typography>
-                  <Divider sx={{ mb: 2 }} />
                   <Typography variant="body1" paragraph>
-                    {selectedApplication.coverLetter}
+                    {selectedApplication?.referral?.message ||
+                      "No message provided"}
                   </Typography>
-                </CardContent>
-              </Card>
+                </Paper>
+              )}
             </Box>
           )}
         </DialogContent>

@@ -99,53 +99,57 @@ class JobSeekerController {
       const jobId = req.params.id;
       const userId = req.user.id;
 
-      console.log('Applying for job:', { jobId, userId });
+      console.log("Applying for job:", { jobId, userId });
 
       // Check if job exists
       const job = await Job.findById(jobId);
       if (!job) {
-        return res.status(404).json({ message: 'Job not found' });
+        return res.status(404).json({ message: "Job not found" });
       }
 
       // Check if already applied
       const existingApplication = await JobApplication.findOne({
         job: jobId,
-        applicant: userId
+        applicant: userId,
       });
 
       if (existingApplication) {
-        return res.status(400).json({ message: 'You have already applied for this job' });
+        return res
+          .status(400)
+          .json({ message: "You have already applied for this job" });
       }
 
       // Create new application
       const application = new JobApplication({
         job: jobId,
         applicant: userId,
-        status: 'pending'
+        status: "pending",
       });
 
       await application.save();
-      console.log('New application created:', {
+      console.log("New application created:", {
         id: application._id,
         jobId: application.job,
         applicantId: application.applicant,
-        status: application.status
+        status: application.status,
       });
 
       // Populate the application details
-      const populatedApplication = await JobApplication.findById(application._id)
-        .populate('job', 'title company')
-        .populate('applicant', 'name email');
+      const populatedApplication = await JobApplication.findById(
+        application._id
+      )
+        .populate("job", "title company")
+        .populate("applicant", "name email");
 
-      res.status(201).json({ 
-        message: 'Application submitted successfully',
-        application: populatedApplication
+      res.status(201).json({
+        message: "Application submitted successfully",
+        application: populatedApplication,
       });
     } catch (error) {
-      console.error('Error in applyForJob:', error);
-      res.status(500).json({ 
-        message: 'Error submitting application',
-        error: error.message 
+      console.error("Error in applyForJob:", error);
+      res.status(500).json({
+        message: "Error submitting application",
+        error: error.message,
       });
     }
   }
@@ -153,8 +157,6 @@ class JobSeekerController {
   // Get user's applications
   async getUserApplications(req, res) {
     try {
-      console.log("Fetching applications for user:", req.user.id);
-
       const applications = await JobApplication.find({
         applicant: req.user.id,
       })
@@ -164,22 +166,12 @@ class JobSeekerController {
         })
         .sort({ createdAt: -1 });
 
-      console.log("Found applications:", {
-        count: applications.length,
-        applications: applications.map((app) => ({
-          id: app._id,
-          jobTitle: app.job?.title,
-          company: app.job?.company,
-          status: app.status,
-          appliedDate: app.createdAt,
-        })),
-      });
-
       res.status(200).json({
         success: true,
         applications,
         count: applications.length,
       });
+      console.log(applications);
     } catch (error) {
       console.error("Error fetching user applications:", error);
       res.status(500).json({

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   AppBar,
   Toolbar,
@@ -14,15 +14,15 @@ import {
   ListItemText,
   useMediaQuery,
   useTheme,
-} from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import { styled } from '@mui/material/styles';
+} from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
+import { styled } from "@mui/material/styles";
 
 const StyledLink = styled(Link)(({ theme }) => ({
-  color: 'inherit',
-  textDecoration: 'none',
+  color: "inherit",
+  textDecoration: "none",
   margin: theme.spacing(0, 2),
-  '&:hover': {
+  "&:hover": {
     color: theme.palette.primary.main,
   },
 }));
@@ -30,7 +30,7 @@ const StyledLink = styled(Link)(({ theme }) => ({
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -80,11 +80,11 @@ const Header = () => {
             to="/"
             sx={{
               flexGrow: 1,
-              textDecoration: 'none',
-              color: 'primary.main',
-              fontWeight: 'bold',
-              display: 'flex',
-              alignItems: 'center',
+              textDecoration: "none",
+              color: "primary.main",
+              fontWeight: "bold",
+              display: "flex",
+              alignItems: "center",
             }}
           >
             Aspire Match
@@ -110,9 +110,9 @@ const Header = () => {
                   keepMounted: true, // Better open performance on mobile.
                 }}
                 sx={{
-                  '& .MuiDrawer-paper': {
+                  "& .MuiDrawer-paper": {
                     width: 240,
-                    boxSizing: 'border-box',
+                    boxSizing: "border-box",
                   },
                 }}
               >
@@ -120,7 +120,7 @@ const Header = () => {
               </Drawer>
             </>
           ) : (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ display: "flex", alignItems: "center" }}>
               <StyledLink to="/about">About</StyledLink>
               <StyledLink to="/contact">Contact</StyledLink>
               <Button

@@ -2,6 +2,8 @@ const Referral = require("../models/Referral");
 const ReferralApplication = require("../models/ReferralApplication");
 const nodemailer = require("nodemailer");
 const User = require("../models/User");
+const uploadToCloudinary = require("../utils/cloudinary");
+const axios = require("axios");
 
 class ReferralController {
   // Create a new Referral posting
@@ -123,10 +125,31 @@ class ReferralController {
         return res.status(404).json({ message: "Referral not found" });
       }
 
-      const { applicantResumeLink, additionalMessage } = req.body;
+      const data = new FormData();
+      data.append("file", req.file);
 
-      console.log(req.user);
+      const options = {
+        method: "POST",
+        url: "https://resume-parser-and-analyzer.p.rapidapi.com/api/v1/cv/",
+        headers: {
+          "x-rapidapi-key":
+            "32a9bf8063msh346623c9a951473p1cb1fdjsna6c0de81c486",
+          "x-rapidapi-host": "resume-parser-and-analyzer.p.rapidapi.com",
+        },
+        data: data,
+      };
 
+      try {
+        const response = await axios.request(options);
+        console.log(response.data);
+      } catch (error) {
+        console.error(error.message);
+      }
+
+      const resume = req.file;
+      const resumeUrl = await uploadToCloudinary(resume);
+
+      const message = req.body.message || "";
       const applicantName = req.user.name;
       const applicantEmail = req.user.email;
 
@@ -136,25 +159,24 @@ class ReferralController {
         to: referral.referrerEmail,
         subject: `New Application for ${referral.jobTitle} at ${referral.company}`,
         text: `
-          Hi ${referral.referrerName},
-  
-          ${applicantName} has applied for the ${referral.jobTitle} position at ${referral.company}.
-  
-          Applicant Details:
-          - Name: ${applicantName}
-          - Email: ${applicantEmail}
-          - Resume: ${applicantResumeLink}
-  
-          Additional Message:
-          ${additionalMessage}
-  
-          Please reach out to them for further referral steps.
-  
-          Thanks,
-          Your Referral Service
-        `,
+                Hi ${referral.referrerName},
+                
+                ${applicantName} has applied for the ${referral.jobTitle} position at ${referral.company}.
+                
+                Applicant Details:
+                - Name: ${applicantName}
+                - Email: ${applicantEmail}
+                - Resume: ${resumeUrl}
+                
+                Additional Message:
+                ${message}
+                
+                Please reach out to them for further referral steps.
+                
+                Thanks,
+                Your Referral Service
+                      `,
       };
-
       const transporter = nodemailer.createTransport({
         service: "Gmail",
         auth: {
@@ -204,7 +226,7 @@ class ReferralController {
   async getUserApplications(req, res) {
     try {
       const applications = await ReferralApplication.find({ user: req.user.id })
-        .populate("job")
+        .populate("referral")
         .sort({ createdAt: -1 });
       res.json(applications);
     } catch (error) {

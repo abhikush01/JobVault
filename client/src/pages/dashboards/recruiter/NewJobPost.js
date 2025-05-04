@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
-import axios from 'axios';
-import { APP_URL } from '../../../lib/Constant';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { APP_URL } from "../../../lib/Constant";
 import {
   Box,
   Typography,
@@ -13,12 +13,9 @@ import {
   Grid,
   useTheme,
   useMediaQuery,
-} from '@mui/material';
-import {
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-} from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
+} from "@mui/material";
+import { Save as SaveIcon, Cancel as CancelIcon } from "@mui/icons-material";
+import { styled } from "@mui/material/styles";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -28,40 +25,40 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 const NewJobPost = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    position: '',
+    title: "",
+    description: "",
+    position: "",
     experience: {
-      min: '',
-      max: ''
+      min: "",
+      max: "",
     },
     salary: {
-      min: '',
-      max: ''
+      min: "",
+      max: "",
     },
-    location: '',
-    requirements: ''
+    location: "",
+    requirements: "",
   });
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name.includes('.')) {
-      const [parent, child] = name.split('.');
-      setFormData(prev => ({
+    if (name.includes(".")) {
+      const [parent, child] = name.split(".");
+      setFormData((prev) => ({
         ...prev,
         [parent]: {
           ...prev[parent],
-          [child]: value
-        }
+          [child]: value,
+        },
       }));
     } else {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        [name]: value
+        [name]: value,
       }));
     }
   };
@@ -69,25 +66,25 @@ const NewJobPost = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const formattedData = {
         ...formData,
         salary: `${formData.salary.min}-${formData.salary.max}`,
         experience: `${formData.experience.min}-${formData.experience.max}`,
-        requirements: formData.requirements.trim()
+        requirements: formData.requirements.trim(),
       };
 
       await axios.post(`${APP_URL}/jobs`, formattedData, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      navigate('/recruiter-dashboard/all-jobs');
+      navigate("/recruiter-dashboard/all-jobs");
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong');
+      setError(err.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -220,11 +217,13 @@ const NewJobPost = () => {
               />
             </Grid>
           </Grid>
-          <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+          <Box
+            sx={{ mt: 3, display: "flex", gap: 2, justifyContent: "flex-end" }}
+          >
             <Button
               variant="outlined"
               startIcon={<CancelIcon />}
-              onClick={() => navigate('/recruiter-dashboard/all-jobs')}
+              onClick={() => navigate("/recruiter-dashboard/all-jobs")}
             >
               Cancel
             </Button>
@@ -234,7 +233,7 @@ const NewJobPost = () => {
               startIcon={<SaveIcon />}
               disabled={loading}
             >
-              {loading ? 'Creating...' : 'Create Job Post'}
+              {loading ? "Creating..." : "Create Job Post"}
             </Button>
           </Box>
         </form>

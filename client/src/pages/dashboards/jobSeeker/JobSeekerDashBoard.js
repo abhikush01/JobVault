@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router';
+import React, { useState } from "react";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Drawer,
@@ -17,7 +17,7 @@ import {
   Divider,
   Avatar,
   Badge,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Menu as MenuIcon,
   Work as WorkIcon,
@@ -25,60 +25,60 @@ import {
   Person as PersonIcon,
   Logout as LogoutIcon,
   Notifications as NotificationsIcon,
-} from '@mui/icons-material';
-import { styled } from '@mui/material/styles';
+} from "@mui/icons-material";
+import { styled } from "@mui/material/styles";
 
 const drawerWidth = 240;
 
-const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
+const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })(
   ({ theme, open }) => ({
     flexGrow: 1,
     padding: theme.spacing(3),
-    transition: theme.transitions.create('margin', {
+    transition: theme.transitions.create("margin", {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,
     }),
     marginLeft: `-${drawerWidth}px`,
     ...(open && {
-      transition: theme.transitions.create('margin', {
+      transition: theme.transitions.create("margin", {
         easing: theme.transitions.easing.easeOut,
         duration: theme.transitions.duration.enteringScreen,
       }),
       marginLeft: 0,
     }),
-  }),
+  })
 );
 
 const AppBarStyled = styled(AppBar, {
-  shouldForwardProp: (prop) => prop !== 'open',
+  shouldForwardProp: (prop) => prop !== "open",
 })(({ theme, open }) => ({
-  transition: theme.transitions.create(['margin', 'width'], {
+  transition: theme.transitions.create(["margin", "width"], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
   ...(open && {
     width: `calc(100% - ${drawerWidth}px)`,
     marginLeft: `${drawerWidth}px`,
-    transition: theme.transitions.create(['margin', 'width'], {
+    transition: theme.transitions.create(["margin", "width"], {
       easing: theme.transitions.easing.easeOut,
       duration: theme.transitions.duration.enteringScreen,
     }),
   }),
 }));
 
-const DrawerHeader = styled('div')(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
+const DrawerHeader = styled("div")(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
   padding: theme.spacing(0, 1),
   ...theme.mixins.toolbar,
-  justifyContent: 'flex-end',
+  justifyContent: "flex-end",
 }));
 
 const JobSeekerDashBoard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
 
   const isActivePath = (path) => {
@@ -86,14 +86,14 @@ const JobSeekerDashBoard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/');
+    localStorage.removeItem("token");
+    navigate("/");
   };
 
   const navigationItems = [
-    { name: 'Jobs', path: '/find-job', icon: <WorkIcon /> },
-    { name: 'Applications', path: '/applications', icon: <DescriptionIcon /> },
-    { name: 'Profile', path: '/user-profile', icon: <PersonIcon /> },
+    { name: "Jobs", path: "/find-job", icon: <WorkIcon /> },
+    { name: "Applications", path: "/applications", icon: <DescriptionIcon /> },
+    { name: "Profile", path: "/user-profile", icon: <PersonIcon /> },
   ];
 
   const handleDrawerToggle = () => {
@@ -101,7 +101,7 @@ const JobSeekerDashBoard = () => {
   };
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: "flex" }}>
       <AppBarStyled position="fixed" open={sidebarOpen}>
         <Toolbar>
           <IconButton
@@ -109,14 +109,15 @@ const JobSeekerDashBoard = () => {
             aria-label="open drawer"
             onClick={handleDrawerToggle}
             edge="start"
-            sx={{ mr: 2, ...(sidebarOpen && { display: 'none' }) }}
+            sx={{ mr: 2, ...(sidebarOpen && { display: "none" }) }}
           >
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            {navigationItems.find(item => isActivePath(item.path))?.name || 'Dashboard'}
+            {navigationItems.find((item) => isActivePath(item.path))?.name ||
+              "Dashboard"}
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <IconButton color="inherit">
               <Badge badgeContent={4} color="error">
                 <NotificationsIcon />
@@ -124,7 +125,7 @@ const JobSeekerDashBoard = () => {
             </IconButton>
             <IconButton
               color="inherit"
-              onClick={() => navigate('/user-dashboard/user-profile')}
+              onClick={() => navigate("/user-dashboard/user-profile")}
             >
               <Avatar sx={{ width: 32, height: 32 }}>U</Avatar>
             </IconButton>
@@ -136,19 +137,19 @@ const JobSeekerDashBoard = () => {
         sx={{
           width: drawerWidth,
           flexShrink: 0,
-          '& .MuiDrawer-paper': {
+          "& .MuiDrawer-paper": {
             width: drawerWidth,
-            boxSizing: 'border-box',
+            boxSizing: "border-box",
           },
         }}
-        variant={isMobile ? 'temporary' : 'persistent'}
+        variant={isMobile ? "temporary" : "persistent"}
         anchor="left"
         open={sidebarOpen}
         onClose={handleDrawerToggle}
       >
         <DrawerHeader>
-          <Box sx={{ width: '100%', p: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+          <Box sx={{ width: "100%", p: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
               JobBoard
             </Typography>
           </Box>
@@ -162,21 +163,21 @@ const JobSeekerDashBoard = () => {
               selected={isActivePath(item.path)}
               onClick={() => navigate(`/user-dashboard${item.path}`)}
               sx={{
-                '&.Mui-selected': {
+                "&.Mui-selected": {
                   backgroundColor: theme.palette.primary.main,
-                  color: 'white',
-                  '&:hover': {
+                  color: "white",
+                  "&:hover": {
                     backgroundColor: theme.palette.primary.dark,
                   },
-                  '& .MuiListItemIcon-root': {
-                    color: 'white',
+                  "& .MuiListItemIcon-root": {
+                    color: "white",
                   },
                 },
               }}
             >
               <ListItemIcon
                 sx={{
-                  color: isActivePath(item.path) ? 'white' : 'inherit',
+                  color: isActivePath(item.path) ? "white" : "inherit",
                 }}
               >
                 {item.icon}
@@ -186,7 +187,7 @@ const JobSeekerDashBoard = () => {
           ))}
         </List>
         <Divider />
-        <Box sx={{ p: 2, mt: 'auto' }}>
+        <Box sx={{ p: 2, mt: "auto" }}>
           <Button
             fullWidth
             variant="contained"

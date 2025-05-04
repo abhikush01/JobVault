@@ -187,11 +187,11 @@ class JobApplicationController {
   async getJobApplications(req, res) {
     try {
       const { jobId } = req.params;
-
+      console.log(jobId);
       // Verify the job belongs to the recruiter
       const job = await Job.findOne({
         _id: jobId,
-        recruiter: req.userId,
+        recruiter: req.user.id,
       });
 
       if (!job) {
@@ -204,7 +204,7 @@ class JobApplicationController {
         .select("-__v")
         .populate([
           {
-            path: "user",
+            path: "applicant",
             select: "name email phoneNumber resume",
           },
           {
@@ -219,10 +219,10 @@ class JobApplicationController {
         applications: applications.map((app) => ({
           ...app.toObject(),
           user: {
-            name: app.user.name,
-            email: app.user.email,
-            phoneNumber: app.user.phoneNumber,
-            resume: app.user.resume,
+            name: app.applicant.name,
+            email: app.applicant.email,
+            phoneNumber: app.applicant.phoneNumber,
+            resume: app.applicant.resume,
           },
         })),
       });
