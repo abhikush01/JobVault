@@ -96,6 +96,8 @@ const UserApplications = () => {
         });
         setApplications(response.data || []);
       }
+
+      console.log(applications);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch applications");
     } finally {

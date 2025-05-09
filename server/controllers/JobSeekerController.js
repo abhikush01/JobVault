@@ -71,12 +71,14 @@ class JobSeekerController {
     try {
       const job = await Job.findById(req.params.id).populate(
         "recruiter",
-        "name companyName companyWebsite"
+        "companyName companyWebsite"
       );
 
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
       }
+
+      console.log(job);
 
       // Check if user has already applied
       const hasApplied = await Application.exists({
@@ -123,6 +125,7 @@ class JobSeekerController {
       const application = new JobApplication({
         job: jobId,
         applicant: userId,
+        recruiter: job.recruiter,
         status: "pending",
       });
 
@@ -241,6 +244,13 @@ class JobSeekerController {
     try {
       const updates = req.body;
       const user = await User.findById(req.user._id);
+      const resume = req.file;
+      const resumeUrl = req.user.resume;
+
+      if (resume) {
+        resumeUrl = await uploadToCloudinary(resume);
+        user.resume = resumeUrl;
+      }
 
       if (!user) {
         return res.status(404).json({ message: "User not found" });

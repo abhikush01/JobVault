@@ -48,6 +48,8 @@ class JobController {
 
       await job.save();
 
+      console.log(job);
+
       res.status(201).json({
         message: "Job posted successfully",
         job,
@@ -85,7 +87,7 @@ class JobController {
 
       // Fetch jobs with pagination
       const jobs = await Job.find(filterConditions)
-        .select("title location experience salary status applicationCount") // Explicitly select fields
+        .select("title location experience salary status applicationCount")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -127,7 +129,7 @@ class JobController {
     try {
       const job = await Job.findById(req.params.id).populate(
         "recruiter",
-        "name companyName"
+        "companyName companyWebsite"
       );
 
       if (!job) {

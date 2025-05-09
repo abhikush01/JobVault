@@ -25,7 +25,11 @@ router.delete("/applications/:id", JobSeekerController.withdrawApplication);
 
 // Profile routes
 router.get("/profile", JobSeekerController.getUserProfile);
-router.put("/profile", JobSeekerController.updateProfile);
+router.put(
+  "/profile",
+  upload.single("resume"),
+  JobSeekerController.updateProfile
+);
 router.post("/profile/resume", JobSeekerController.uploadResume);
 
 // Get applications for a specific job

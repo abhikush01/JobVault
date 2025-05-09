@@ -147,7 +147,11 @@ class ReferralController {
       }
 
       const resume = req.file;
-      const resumeUrl = await uploadToCloudinary(resume);
+      const resumeUrl = req.user.resume;
+
+      if (resume) {
+        resumeUrl = await uploadToCloudinary(resume);
+      }
 
       const message = req.body.message || "";
       const applicantName = req.user.name;

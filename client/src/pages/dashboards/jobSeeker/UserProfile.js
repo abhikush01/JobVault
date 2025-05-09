@@ -134,7 +134,7 @@ const UserProfile = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("token");
-      await axios.put(`${APP_URL}/jobs/profile`, editedProfile, {
+      await axios.put(`${APP_URL}/jobseekers/profile`, editedProfile, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setProfile(editedProfile);
