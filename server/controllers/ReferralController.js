@@ -1,9 +1,7 @@
 const Referral = require("../models/Referral");
 const ReferralApplication = require("../models/ReferralApplication");
 const nodemailer = require("nodemailer");
-const User = require("../models/User");
 const uploadToCloudinary = require("../utils/cloudinary");
-const axios = require("axios");
 
 class ReferralController {
   // Create a new Referral posting

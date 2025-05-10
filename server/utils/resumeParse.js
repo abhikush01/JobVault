@@ -1,22 +1,26 @@
-async function parseResume(file) {
-  const data = new FormData();
-  data.append("file", file);
+const axios = require("axios");
 
-  const options = {
-    method: "POST",
-    url: "https://resume-parser-and-analyzer.p.rapidapi.com/api/v1/cv/",
-    headers: {
-      "x-rapidapi-key": process.env.RESUME_PARSER_KEY,
-      "x-rapidapi-host": "resume-parser-and-analyzer.p.rapidapi.com",
-    },
-    data: data,
-  };
-
+async function parseResume(resumeUrl) {
   try {
-    const response = await axios.request(options);
+    console.log(resumeUrl);
+    const response = await axios.get(
+      `https://api.apilayer.com/resume_parser/url`,
+      {
+        params: { url: resumeUrl },
+        headers: {
+          apikey: process.env.RESUME_PARSER_KEY,
+        },
+      }
+    );
+
     console.log(response.data);
+    return response.data;
   } catch (error) {
-    console.error(error.message);
+    console.error(
+      "Resume parsing error:",
+      error.response?.data || error.message
+    );
+    throw error;
   }
 }
 

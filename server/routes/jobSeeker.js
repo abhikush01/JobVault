@@ -30,7 +30,11 @@ router.put(
   upload.single("resume"),
   JobSeekerController.updateProfile
 );
-router.post("/profile/resume", JobSeekerController.uploadResume);
+router.post(
+  "/profile/resume",
+  upload.single("resume"),
+  JobSeekerController.uploadResume
+);
 
 // Get applications for a specific job
 router.get("/job/:jobId/applications", auth, async (req, res) => {

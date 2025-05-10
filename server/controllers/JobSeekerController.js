@@ -3,9 +3,8 @@ const Application = require("../models/Application");
 const User = require("../models/User");
 const JobApplication = require("../models/JobApplication");
 const cloudinary = require("cloudinary").v2;
-const qs = require("qs");
-const { Readable } = require("stream");
-const FormData = require("form-data");
+
+const resumeParse = require("../utils/resumeParse");
 const uploadToCloudinary = require("../utils/cloudinary");
 
 cloudinary.config({
@@ -79,8 +78,6 @@ class JobSeekerController {
         return res.status(404).json({ message: "Job not found" });
       }
 
-      console.log(job);
-
       // Check if user has already applied
       const hasApplied = await Application.exists({
         job: job._id,
@@ -101,11 +98,15 @@ class JobSeekerController {
     try {
       const jobId = req.params.id;
       const userId = req.user.id;
-      const resumeUrl = req.user.resume;
+      let resumeUrl = req.user.resume;
 
       if (req.file) {
         resumeUrl = await uploadToCloudinary(req.file);
       }
+
+      console.log("resume", resumeUrl);
+
+      await resumeParse(resumeUrl);
 
       if (!resumeUrl) {
         return res.status(404).json({ message: "Resume is required" });
@@ -154,7 +155,6 @@ class JobSeekerController {
         application: populatedApplication,
       });
     } catch (error) {
-      console.error("Error in applyForJob:", error);
       res.status(500).json({
         message: "Error submitting application",
         error: error.message,
@@ -183,7 +183,6 @@ class JobSeekerController {
         applications,
         count: applications.length,
       });
-      console.log(applications);
     } catch (error) {
       console.error("Error fetching user applications:", error);
       res.status(500).json({
@@ -295,58 +294,23 @@ class JobSeekerController {
   // Upload resume
   async uploadResume(req, res) {
     try {
-      const chunks = [];
+      const user = await User.findById(req.user._id);
+      const resume = req.file;
 
-      req.on("data", (chunk) => {
-        chunks.push(chunk);
-      });
+      if (!resume) {
+        res.status(500).json({ error: "Please Select Resume" });
+      }
 
-      req.on("end", async () => {
-        const buffer = Buffer.concat(chunks);
+      const resumeUrl = await uploadToCloudinary(resume);
+      user.resume = resumeUrl;
 
-        // Upload to cloudinary
-        cloudinary.uploader
-          .upload_stream(
-            {
-              resource_type: "auto",
-              folder: "resumes",
-              flags: "attachment:false",
-            },
+      await user.save();
 
-            async (error, result) => {
-              if (error) {
-                return res.status(500).json({ error: error.message });
-              } else {
-                const fileLink = result.secure_url;
-
-                // Update user's resume field
-                const user = await User.findByIdAndUpdate(
-                  req.user.id,
-                  { resume: fileLink },
-                  { new: true }
-                );
-
-                if (!user) {
-                  return res.status(404).json({ error: "User not found" });
-                }
-
-                return res.json({
-                  message: "Resume uploaded successfully",
-                  resumeUrl: fileLink,
-                  user,
-                });
-              }
-            }
-          )
-          .end(buffer);
-      });
-
-      req.on("error", (err) => {
-        console.error(err);
-        res.status(500).json({ error: "Error reading file" });
+      res.status(200).json({
+        message: "Resume uploaded successfully",
+        user,
       });
     } catch (err) {
-      console.error(err);
       res.status(500).json({ error: "Server error" });
     }
   }

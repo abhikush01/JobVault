@@ -155,30 +155,19 @@ const JobDetails = () => {
           setApplying(false);
           return;
         }
-
-        setUploadingResume(true);
-        const formData = new FormData();
-        formData.append("resume", selectedFile);
-
-        // First upload the resume
-        await axios.post(`${APP_URL}/jobseekers/profile/resume`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
-
-        setUploadingResume(false);
       }
 
-      // Then apply for the job
-      await axios.post(
-        `${APP_URL}/jobseekers/jobs/${id}/apply`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const formData = new FormData();
+      if (resumeOption === "new") {
+        formData.append("resume", selectedFile);
+      }
+
+      await axios.post(`${APP_URL}/jobseekers/jobs/${id}/apply`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       setHasApplied(true);
       setResumeDialogOpen(false);
@@ -196,7 +185,6 @@ const JobDetails = () => {
       }
     } finally {
       setApplying(false);
-      setUploadingResume(false);
     }
   };
 
