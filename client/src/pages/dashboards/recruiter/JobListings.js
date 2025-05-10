@@ -24,12 +24,17 @@ import {
   Alert,
   useTheme,
   useMediaQuery,
+  Popover,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Visibility as VisibilityIcon,
   Delete as DeleteIcon,
   People as PeopleIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 
@@ -64,6 +69,8 @@ const JobListings = () => {
     status: "",
     experience: "",
   });
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedJobId, setSelectedJobId] = useState(null);
 
   useEffect(() => {
     fetchJobs();
@@ -103,6 +110,62 @@ const JobListings = () => {
     } catch (err) {
       setError(err.response?.data?.message || "Failed to delete job");
     }
+  };
+
+  const handleStatusChange = async (id, newStatus) => {
+    if (
+      !window.confirm(
+        `Are you sure you want to ${
+          newStatus === "closed" ? "close" : "reopen"
+        } this job posting?`
+      )
+    )
+      return;
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `${APP_URL}/jobs/my-jobs/${id}`,
+        { status: newStatus },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      // Update the job status in the local state
+      setJobs(
+        jobs.map((job) =>
+          job._id === id ? { ...job, status: newStatus } : job
+        )
+      );
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          `Failed to ${newStatus === "closed" ? "close" : "reopen"} job`
+      );
+    }
+  };
+
+  const handleStatusClick = (event, jobId) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedJobId(jobId);
+  };
+
+  const handleStatusClose = () => {
+    setAnchorEl(null);
+    setSelectedJobId(null);
+  };
+
+  const handleStatusSelect = async (newStatus) => {
+    if (
+      window.confirm(
+        `Are you sure you want to ${
+          newStatus === "closed" ? "close" : "reopen"
+        } this job posting?`
+      )
+    ) {
+      await handleStatusChange(selectedJobId, newStatus);
+    }
+    handleStatusClose();
   };
 
   if (loading) {
@@ -203,12 +266,42 @@ const JobListings = () => {
               <StyledTableRow key={job._id}>
                 <TableCell>{job.title}</TableCell>
                 <TableCell>{job.location}</TableCell>
-                <TableCell>{`${job.experience?.min || 0}-${
-                  job.experience?.max || 0
-                } years`}</TableCell>
+                <TableCell>{`${job.experience || "0"} years`}</TableCell>
                 <TableCell>{`₹${job.salary}`}</TableCell>
                 <TableCell>
-                  <StatusChip label={job.status} status={job.status} />
+                  <FormControl size="small">
+                    <Select
+                      value={job.status}
+                      onChange={(e) =>
+                        handleStatusChange(job._id, e.target.value)
+                      }
+                      size="small"
+                      sx={{
+                        minWidth: 100,
+                        backgroundColor:
+                          job.status === "active"
+                            ? "success.light"
+                            : "error.light",
+                        color: "white",
+                        "& .MuiSelect-icon": {
+                          color: "white",
+                        },
+                        "&:hover": {
+                          backgroundColor:
+                            job.status === "active"
+                              ? "success.main"
+                              : "error.main",
+                        },
+                      }}
+                    >
+                      <MenuItem value="active" sx={{ color: "success.main" }}>
+                        Active
+                      </MenuItem>
+                      <MenuItem value="closed" sx={{ color: "error.main" }}>
+                        Closed
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
                 </TableCell>
                 <TableCell>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -241,6 +334,7 @@ const JobListings = () => {
                       size="small"
                       onClick={() => handleDelete(job._id)}
                       title="Delete"
+                      color="error"
                     >
                       <DeleteIcon />
                     </IconButton>
@@ -251,6 +345,49 @@ const JobListings = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={handleStatusClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "left",
+        }}
+      >
+        <List sx={{ width: 200 }}>
+          <ListItem
+            button
+            onClick={() => handleStatusSelect("active")}
+            sx={{
+              bgcolor: (theme) => theme.palette.success.light,
+              color: "white",
+              "&:hover": {
+                bgcolor: (theme) => theme.palette.success.main,
+              },
+            }}
+          >
+            <ListItemText primary="Active" />
+          </ListItem>
+          <ListItem
+            button
+            onClick={() => handleStatusSelect("closed")}
+            sx={{
+              bgcolor: (theme) => theme.palette.error.light,
+              color: "white",
+              "&:hover": {
+                bgcolor: (theme) => theme.palette.error.main,
+              },
+            }}
+          >
+            <ListItemText primary="Closed" />
+          </ListItem>
+        </List>
+      </Popover>
     </Box>
   );
 };

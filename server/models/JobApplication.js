@@ -26,11 +26,28 @@ const jobApplicationSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    resume: {
+      type: String, // URL to resume
+      required: true,
+    },
+    feedbacks: [
+      {
+        sender: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Recruiter",
+        },
+        content: String,
+        timestamp: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );
 
-// Create a compound index to ensure a user can't apply multiple times to the same job
+// Ensure unique application per job/user
 jobApplicationSchema.index({ job: 1, applicant: 1 }, { unique: true });
 
 module.exports = mongoose.model("JobApplication", jobApplicationSchema);

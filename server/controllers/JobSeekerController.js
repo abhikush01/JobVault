@@ -6,6 +6,7 @@ const cloudinary = require("cloudinary").v2;
 const qs = require("qs");
 const { Readable } = require("stream");
 const FormData = require("form-data");
+const uploadToCloudinary = require("../utils/cloudinary");
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -100,6 +101,15 @@ class JobSeekerController {
     try {
       const jobId = req.params.id;
       const userId = req.user.id;
+      const resumeUrl = req.user.resume;
+
+      if (req.file) {
+        resumeUrl = await uploadToCloudinary(req.file);
+      }
+
+      if (!resumeUrl) {
+        return res.status(404).json({ message: "Resume is required" });
+      }
 
       console.log("Applying for job:", { jobId, userId });
 
@@ -127,15 +137,10 @@ class JobSeekerController {
         applicant: userId,
         recruiter: job.recruiter,
         status: "pending",
+        resume: resumeUrl,
       });
 
       await application.save();
-      console.log("New application created:", {
-        id: application._id,
-        jobId: application.job,
-        applicantId: application.applicant,
-        status: application.status,
-      });
 
       // Populate the application details
       const populatedApplication = await JobApplication.findById(
@@ -165,7 +170,11 @@ class JobSeekerController {
       })
         .populate({
           path: "job",
-          select: "title company description location salary",
+          select: "title company description location salary recruiter",
+          populate: {
+            path: "recruiter",
+            select: "companyName", // Only fetch companyName
+          },
         })
         .sort({ createdAt: -1 });
 

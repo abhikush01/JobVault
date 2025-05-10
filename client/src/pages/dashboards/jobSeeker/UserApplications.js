@@ -27,6 +27,7 @@ import {
   Alert,
   useTheme,
   useMediaQuery,
+  Divider,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -66,6 +67,8 @@ const UserApplications = () => {
   const [error, setError] = useState("");
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [feedbackMessages, setFeedbackMessages] = useState([]);
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
     status: "",
@@ -108,6 +111,29 @@ const UserApplications = () => {
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleViewDetails = async (application) => {
+    setSelectedApplication(application);
+    setDetailsDialogOpen(true);
+    setLoadingFeedback(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `${APP_URL}/applications/${application._id}/feedback`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setFeedbackMessages(response.data.feedbacks || []);
+      console.log("Feedbacks", feedbackMessages);
+    } catch (err) {
+      console.error("Error fetching feedback:", err);
+      setError("Failed to fetch feedback messages");
+    } finally {
+      setLoadingFeedback(false);
+    }
   };
 
   if (loading) {
@@ -199,7 +225,7 @@ const UserApplications = () => {
                 </TableCell>
                 <TableCell>
                   {filters.type === "job"
-                    ? application?.job?.company || "N/A"
+                    ? application?.job?.recruiter?.companyName || "N/A"
                     : application?.referral?.company || "N/A"}
                 </TableCell>
                 {filters.type === "referral" && (
@@ -238,10 +264,7 @@ const UserApplications = () => {
                 <TableCell>
                   <IconButton
                     size="small"
-                    onClick={() => {
-                      setSelectedApplication(application);
-                      setDetailsDialogOpen(true);
-                    }}
+                    onClick={() => handleViewDetails(application)}
                   >
                     <MessageIcon />
                   </IconButton>
@@ -254,124 +277,94 @@ const UserApplications = () => {
 
       <Dialog
         open={detailsDialogOpen}
-        onClose={() => setDetailsDialogOpen(false)}
+        onClose={() => {
+          setDetailsDialogOpen(false);
+          setSelectedApplication(null);
+          setFeedbackMessages([]);
+        }}
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Application Details</DialogTitle>
+        <DialogTitle>
+          Application Details
+          <IconButton
+            onClick={() => {
+              setDetailsDialogOpen(false);
+              setSelectedApplication(null);
+              setFeedbackMessages([]);
+            }}
+            sx={{ position: "absolute", right: 8, top: 8 }}
+          >
+            <CancelIcon />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
           {selectedApplication && (
             <Box sx={{ mt: 2 }}>
-              <Paper sx={{ p: 2, mb: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  {filters.type === "job"
-                    ? selectedApplication?.job?.title || "N/A"
-                    : selectedApplication?.referral?.jobTitle || "N/A"}
-                </Typography>
-                <Typography color="text.secondary" gutterBottom>
-                  {filters.type === "job"
-                    ? selectedApplication?.job?.company || "N/A"
-                    : selectedApplication?.referral?.company || "N/A"}
-                </Typography>
-                {filters.type === "referral" && (
-                  <>
-                    <Typography color="text.secondary" gutterBottom>
-                      Referrer:{" "}
-                      {selectedApplication?.referral?.referrerName || "N/A"}
-                    </Typography>
-                    <Typography color="text.secondary" gutterBottom>
-                      Referrer Email:{" "}
-                      {selectedApplication?.referral?.referrerEmail || "N/A"}
-                    </Typography>
-                  </>
-                )}
-                <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-                  <StatusChip
-                    label={
-                      filters.type === "job"
-                        ? selectedApplication?.status || "N/A"
-                        : selectedApplication?.referral?.status || "N/A"
-                    }
-                    status={
-                      filters.type === "job"
-                        ? selectedApplication?.status || "N/A"
-                        : selectedApplication?.referral?.status || "N/A"
-                    }
-                  />
+              <Typography variant="h6" gutterBottom>
+                {filters.type === "job"
+                  ? selectedApplication?.job?.title
+                  : selectedApplication?.referral?.jobTitle}
+              </Typography>
+              <Typography
+                variant="subtitle1"
+                color="text.secondary"
+                gutterBottom
+              >
+                {filters.type === "job"
+                  ? selectedApplication?.job?.recruiter?.companyName
+                  : selectedApplication?.referral?.company}
+              </Typography>
+
+              <Divider sx={{ my: 2 }} />
+
+              <Typography variant="h6" gutterBottom>
+                Feedback Messages
+              </Typography>
+
+              {loadingFeedback ? (
+                <Box display="flex" justifyContent="center" my={2}>
+                  <CircularProgress size={24} />
                 </Box>
-                <Typography variant="body2">
-                  Applied on:{" "}
-                  {filters.type === "job"
-                    ? new Date(
-                        selectedApplication?.createdAt
-                      ).toLocaleDateString()
-                    : new Date(
-                        selectedApplication?.appliedDate
-                      ).toLocaleDateString()}
-                </Typography>
-                {filters.type === "referral" && (
-                  <Typography variant="body2">
-                    Deadline:{" "}
-                    {selectedApplication?.referral?.deadline
-                      ? new Date(
-                          selectedApplication.referral.deadline
-                        ).toLocaleDateString()
-                      : "N/A"}
-                  </Typography>
-                )}
-              </Paper>
-
-              {filters.type === "job" ? (
-                <>
-                  {selectedApplication?.recruiterComment && (
-                    <Paper sx={{ p: 2, mb: 2 }}>
-                      <Typography variant="h6" gutterBottom>
-                        Recruiter's Comment
+              ) : feedbackMessages.length > 0 ? (
+                feedbackMessages.map((feedback, index) => (
+                  <Paper key={index} sx={{ p: 2, mb: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 1,
+                      }}
+                    >
+                      <Typography variant="subtitle2" color="primary">
+                        Recruiter
                       </Typography>
-                      <Typography variant="body1">
-                        {selectedApplication.recruiterComment}
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(feedback.timestamp).toLocaleString()}
                       </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ mt: 1, display: "block" }}
-                      >
-                        Last updated:{" "}
-                        {selectedApplication?.updatedAt
-                          ? new Date(
-                              selectedApplication.updatedAt
-                            ).toLocaleDateString()
-                          : "N/A"}
-                      </Typography>
-                    </Paper>
-                  )}
-
-                  <Paper sx={{ p: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                      Your Application
-                    </Typography>
-                    <Typography variant="body1" paragraph>
-                      {selectedApplication?.coverLetter ||
-                        "No cover letter provided"}
-                    </Typography>
+                    </Box>
+                    <Typography variant="body1">{feedback.content}</Typography>
                   </Paper>
-                </>
+                ))
               ) : (
-                <Paper sx={{ p: 2 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Referrer's Message
-                  </Typography>
-                  <Typography variant="body1" paragraph>
-                    {selectedApplication?.referral?.message ||
-                      "No message provided"}
-                  </Typography>
-                </Paper>
+                <Typography color="text.secondary">
+                  No feedback messages available.
+                </Typography>
               )}
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDetailsDialogOpen(false)}>Close</Button>
+          <Button
+            onClick={() => {
+              setDetailsDialogOpen(false);
+              setSelectedApplication(null);
+              setFeedbackMessages([]);
+            }}
+          >
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

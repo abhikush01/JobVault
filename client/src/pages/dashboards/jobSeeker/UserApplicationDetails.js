@@ -148,13 +148,15 @@ const UserApplicationDetails = () => {
               {application.job?.title}
             </Typography>
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              {application.job?.company}
+              {application.job?.recruiter.companyName}
             </Typography>
 
             <Box sx={{ my: 3 }}>
               <InfoItem>
                 <Business />
-                <Typography>{application.job?.company}</Typography>
+                <Typography>
+                  {application.job?.recruiter.companyName}
+                </Typography>
               </InfoItem>
               <InfoItem>
                 <LocationOn />

@@ -27,9 +27,13 @@ router.put(
 
 // New route for sending messages to applicants
 router.post(
-  "/message",
+  "/feedback",
   recruiterOnly,
   JobApplicationController.sendMessageToApplicants
 );
 
+router.get(
+  "/:applicationId/feedback",
+  JobApplicationController.getFeedbackMessgaes
+);
 module.exports = router;

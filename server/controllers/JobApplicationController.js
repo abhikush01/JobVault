@@ -1,6 +1,7 @@
 const JobApplication = require("../models/JobApplication");
 const Job = require("../models/Job");
 const User = require("../models/User");
+const sendMail = require("../utils/sendMail");
 
 class JobApplicationController {
   // Apply for a job
@@ -205,7 +206,7 @@ class JobApplicationController {
         .populate([
           {
             path: "applicant",
-            select: "name email phoneNumber resume",
+            select: "name email phoneNumber resume experience",
           },
           {
             path: "job",
@@ -238,7 +239,9 @@ class JobApplicationController {
       const { applicationId } = req.params;
 
       if (
-        !["pending", "reviewed", "shortlisted", "rejected"].includes(status)
+        !["pending", "reviewing", "shortlisted", "rejected", "hired"].includes(
+          status
+        )
       ) {
         return res.status(400).json({
           message: "Invalid status",
@@ -255,8 +258,10 @@ class JobApplicationController {
         });
       }
 
+      console.log("recruiter", application.job.recruiter.toString());
+      console.log("user", req.user.id);
       // Verify the job belongs to the recruiter
-      if (application.job.recruiter.toString() !== req.userId) {
+      if (application.job.recruiter.toString() !== req.user.id) {
         return res.status(403).json({
           message: "Not authorized to update this application",
         });
@@ -277,50 +282,73 @@ class JobApplicationController {
   // Add to JobApplicationController class
   async sendMessageToApplicants(req, res) {
     try {
-      const { applicationIds, message } = req.body;
+      const { applicationId, message } = req.body;
+      const recruiterId = req.user._id;
 
-      // Verify all applications exist and belong to jobs posted by this recruiter
-      const applications = await JobApplication.find({
-        _id: { $in: applicationIds },
-      }).populate("job");
-
-      if (!applications || applications.length === 0) {
-        return res.status(404).json({
-          message: "No applications found",
-        });
-      }
-
-      // Verify recruiter owns all jobs
-      const unauthorized = applications.some(
-        (app) => app.job.recruiter.toString() !== req.user._id.toString()
+      const application = await JobApplication.findById(applicationId).populate(
+        "applicant"
       );
 
-      if (unauthorized) {
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+
+      if (application.recruiter.toString() !== recruiterId.toString()) {
         return res.status(403).json({
-          message: "Not authorized to message some of these applicants",
+          message: "Unauthorized to send feedback for this application",
         });
       }
 
-      // Update applications with message
-      await JobApplication.updateMany(
-        { _id: { $in: applicationIds } },
-        {
-          $push: {
-            messages: {
-              sender: req.user._id,
-              content: message,
-              timestamp: new Date(),
-            },
-          },
-        }
+      // Push feedback
+      application.feedbacks.push({
+        sender: recruiterId,
+        content: message,
+        timestamp: new Date(),
+      });
+
+      await application.save();
+
+      // Send email to applicant
+      const applicantEmail = application.applicant.email;
+      await sendMail({
+        to: applicantEmail,
+        subject: "Feedback on your job application",
+        text: message,
+      });
+      res.status(200).json({ message: "Feedback sent and email delivered" });
+    } catch (error) {
+      console.error("Error in sendFeedbackToApplicant:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+
+  async getFeedbackMessgaes(req, res) {
+    try {
+      const { applicationId } = req.params;
+
+      const application = await JobApplication.findById(applicationId).select(
+        "feedbacks applicant recruiter"
       );
 
-      res.status(200).json({
-        message: "Message sent successfully",
-      });
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+
+      // Only allow recruiter or applicant to view feedbacks
+      const userId = req.user._id.toString();
+      if (
+        application.applicant.toString() !== userId &&
+        application.recruiter.toString() !== userId
+      ) {
+        return res.status(403).json({ message: "Unauthorized access" });
+      }
+
+      console.log(application.feedbacks);
+
+      res.status(200).json({ feedbacks: application.feedbacks });
     } catch (error) {
-      console.error("Error in sendMessageToApplicants:", error);
-      res.status(500).json({ message: error.message });
+      console.error("Error in getFeedbacksForApplication:", error);
+      res.status(500).json({ message: "Failed to retrieve feedbacks" });
     }
   }
 }

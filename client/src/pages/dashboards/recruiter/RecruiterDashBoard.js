@@ -89,7 +89,7 @@ const RecruiterDashboard = () => {
     const fetchRecruiterData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get(`${APP_URL}/recruiter/profile`, {
+        const response = await axios.get(`${APP_URL}/recruiters/profile`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

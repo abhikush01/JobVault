@@ -148,7 +148,9 @@ const JobList = () => {
   };
 
   const filteredData = useMemo(() => {
-    let filteredJobs = Array.isArray(jobs) ? jobs : [];
+    let filteredJobs = Array.isArray(jobs)
+      ? jobs.filter((job) => job.status === "active")
+      : [];
     let filteredReferrals = Array.isArray(referrals) ? referrals : [];
 
     if (searchTerm) {
@@ -156,7 +158,8 @@ const JobList = () => {
       filteredJobs = filteredJobs.filter(
         (job) =>
           job?.title?.toLowerCase().includes(searchLower) ||
-          job?.description?.toLowerCase().includes(searchLower)
+          job?.description?.toLowerCase().includes(searchLower) ||
+          job?.recruiter?.companyName?.toLowerCase().includes(searchLower)
       );
       filteredReferrals = filteredReferrals.filter(
         (referral) =>
@@ -316,7 +319,14 @@ const JobList = () => {
                     </CompanyAvatar>
                     <Box sx={{ ml: 2 }}>
                       <Typography variant="h6" gutterBottom>
-                        {item.title}
+                        {item.isReferral ? item.jobTitle : item.title}
+                      </Typography>
+                      <Typography
+                        variant="subtitle1"
+                        color="text.secondary"
+                        gutterBottom
+                      >
+                        {item.recruiter?.companyName}
                       </Typography>
                       {item.company && (
                         <Typography color="text.secondary">

@@ -125,27 +125,6 @@ class ReferralController {
         return res.status(404).json({ message: "Referral not found" });
       }
 
-      const data = new FormData();
-      data.append("file", req.file);
-
-      const options = {
-        method: "POST",
-        url: "https://resume-parser-and-analyzer.p.rapidapi.com/api/v1/cv/",
-        headers: {
-          "x-rapidapi-key":
-            "32a9bf8063msh346623c9a951473p1cb1fdjsna6c0de81c486",
-          "x-rapidapi-host": "resume-parser-and-analyzer.p.rapidapi.com",
-        },
-        data: data,
-      };
-
-      try {
-        const response = await axios.request(options);
-        console.log(response.data);
-      } catch (error) {
-        console.error(error.message);
-      }
-
       const resume = req.file;
       const resumeUrl = req.user.resume;
 

@@ -6,8 +6,17 @@ class JobController {
   // Create a new job posting
   async createJob(req, res) {
     try {
-      const { title, description, position, experience, salary, location } =
-        req.body;
+      const {
+        title,
+        description,
+        position,
+        experience,
+        salary,
+        location,
+        requirements,
+      } = req.body;
+
+      console.log(experience);
 
       // Validate required fields
       if (
@@ -44,6 +53,7 @@ class JobController {
         experience,
         salary,
         location,
+        requirements,
       });
 
       await job.save();
@@ -143,7 +153,7 @@ class JobController {
   }
 
   // Update a job posting
-  async updateJob(req, res) {
+  async updateJobStatus(req, res) {
     try {
       const job = await Job.findOne({
         _id: req.params.id,
@@ -154,37 +164,26 @@ class JobController {
         return res.status(404).json({ message: "Job not found" });
       }
 
-      const updates = req.body;
+      const { status } = req.body;
 
-      // Validate experience and salary ranges if they're being updated
-      if (updates.experience) {
-        if (updates.experience.min > updates.experience.max) {
-          return res.status(400).json({
-            message: "Invalid experience range",
-          });
-        }
+      if (!["active", "closed"].includes(status)) {
+        return res.status(400).json({
+          message: "Invalid status. Allowed values are 'active' or 'closed'.",
+        });
       }
 
-      if (updates.salary) {
-        if (updates.salary.min > updates.salary.max) {
-          return res.status(400).json({
-            message: "Invalid salary range",
-          });
-        }
-      }
-
-      Object.keys(updates).forEach((key) => {
-        job[key] = updates[key];
-      });
+      // Update only the status
+      job.status = status;
 
       await job.save();
 
       res.status(200).json({
-        message: "Job updated successfully",
+        message: `Job status updated to '${status}' successfully`,
         job,
       });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      console.error("Error in updateJobStatus:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 
