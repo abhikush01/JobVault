@@ -8,7 +8,7 @@ async function parseResume(resumeUrl) {
       {
         params: { url: resumeUrl },
         headers: {
-          apikey: process.env.RESUME_PARSER_KEY,
+          apikey: "ZmD3isfJZpXljOSfzSnCUVGDiNiJsEhz",
         },
       }
     );

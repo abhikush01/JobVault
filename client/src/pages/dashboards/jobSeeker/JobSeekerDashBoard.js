@@ -163,26 +163,38 @@ const JobSeekerDashBoard = () => {
               selected={isActivePath(item.path)}
               onClick={() => navigate(`/user-dashboard${item.path}`)}
               sx={{
-                "&.Mui-selected": {
+                borderRadius: '8px',
+                mx: 1,
+                my: 0.5,
+                '&.Mui-selected': {
                   backgroundColor: theme.palette.primary.main,
-                  color: "white",
-                  "&:hover": {
+                  color: 'white',
+                  '&:hover': {
                     backgroundColor: theme.palette.primary.dark,
                   },
-                  "& .MuiListItemIcon-root": {
-                    color: "white",
+                  '& .MuiListItemIcon-root': {
+                    color: 'white',
                   },
+                },
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
                 },
               }}
             >
               <ListItemIcon
                 sx={{
-                  color: isActivePath(item.path) ? "white" : "inherit",
+                  minWidth: 40,
+                  color: isActivePath(item.path) ? theme.palette.text.primary : theme.palette.text.primary,
                 }}
               >
                 {item.icon}
               </ListItemIcon>
-              <ListItemText primary={item.name} />
+              <ListItemText 
+                primary={item.name} 
+                primaryTypographyProps={{
+                  fontWeight: isActivePath(item.path) ? 600 : 400,
+                }}
+              />
             </ListItem>
           ))}
         </List>
