@@ -29,6 +29,12 @@ import {
   CardActions,
   Divider,
   Stack,
+  Tooltip,
+  Fade,
+  Zoom,
+  Snackbar,
+  IconButton,
+  Collapse,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -39,6 +45,10 @@ import {
   Business,
   CalendarToday,
   People,
+  FilterList,
+  Close as CloseIcon,
+  Bookmark as BookmarkIcon,
+  BookmarkBorder as BookmarkBorderIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 
@@ -48,7 +58,7 @@ const StyledCard = styled(Card)(({ theme }) => ({
   height: "100%",
   display: "flex",
   flexDirection: "column",
-  transition: "transform 0.2s ease-in-out",
+  transition: "all 0.3s ease",
   "&:hover": {
     transform: "translateY(-4px)",
     boxShadow: theme.shadows[4],
@@ -60,6 +70,18 @@ const CompanyAvatar = styled(Avatar)(({ theme }) => ({
   height: 56,
   backgroundColor: theme.palette.primary.main,
   marginBottom: theme.spacing(2),
+  transition: "transform 0.3s ease",
+  "&:hover": {
+    transform: "scale(1.1)",
+  },
+}));
+
+const FilterSection = styled(Box)(({ theme }) => ({
+  transition: "all 0.3s ease",
+  padding: theme.spacing(2),
+  borderRadius: theme.spacing(1),
+  backgroundColor: theme.palette.background.paper,
+  boxShadow: theme.shadows[1],
 }));
 
 const JobList = () => {
@@ -74,6 +96,9 @@ const JobList = () => {
     location: "",
   });
   const [userProfile, setUserProfile] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [savedJobs, setSavedJobs] = useState([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -223,6 +248,39 @@ const JobList = () => {
     return Math.ceil(totalItems / ITEMS_PER_PAGE);
   }, [filteredData, tabValue]);
 
+  const handleSaveJob = async (jobId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (savedJobs.includes(jobId)) {
+        await axios.delete(`${APP_URL}/jobseekers/saved-jobs/${jobId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setSavedJobs(prev => prev.filter(id => id !== jobId));
+        setSnackbar({
+          open: true,
+          message: "Job removed from saved jobs",
+          severity: "info"
+        });
+      } else {
+        await axios.post(`${APP_URL}/jobseekers/saved-jobs/${jobId}`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setSavedJobs(prev => [...prev, jobId]);
+        setSnackbar({
+          open: true,
+          message: "Job saved successfully",
+          severity: "success"
+        });
+      }
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: "Failed to update saved jobs",
+        severity: "error"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Box
@@ -246,175 +304,213 @@ const JobList = () => {
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 3,
-            flexDirection: { xs: "column", md: "row" },
-            gap: 2,
-          }}
-        >
-          <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-            Job Opportunities
-          </Typography>
-          <Tabs
-            value={tabValue}
-            onChange={handleTabChange}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{ borderBottom: 1, borderColor: "divider" }}
-          >
-            <Tab label="All" />
-            <Tab label="Regular Jobs" />
-            <Tab label="Referral Posts" />
-          </Tabs>
-        </Box>
-
-        <Stack spacing={2} sx={{ mb: 3 }}>
-          <TextField
-            fullWidth
-            label="Search"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by title or description"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
+      <Fade in={true}>
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+              flexDirection: { xs: "column", md: "row" },
+              gap: 2,
             }}
-          />
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Location</InputLabel>
-                <Select
-                  name="location"
-                  value={filters.location}
-                  onChange={handleFilterChange}
-                  label="Location"
-                >
-                  <MenuItem value="">All Locations</MenuItem>
-                  <MenuItem value="Remote">Remote</MenuItem>
-                  <MenuItem value="Hybrid">Hybrid</MenuItem>
-                  <MenuItem value="On-site">On-site</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-        </Stack>
-
-        <Grid container spacing={3}>
-          {paginatedData.map((item) => (
-            <Grid item xs={12} md={6} key={item._id}>
-              <StyledCard>
-                <CardContent>
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <CompanyAvatar>
-                      {item.isReferral ? <People /> : <Business />}
-                    </CompanyAvatar>
-                    <Box sx={{ ml: 2 }}>
-                      <Typography variant="h6" gutterBottom>
-                        {item.isReferral ? item.jobTitle : item.title}
-                      </Typography>
-                      <Typography
-                        variant="subtitle1"
-                        color="text.secondary"
-                        gutterBottom
-                      >
-                        {item.recruiter?.companyName}
-                      </Typography>
-                      {item.company && (
-                        <Typography color="text.secondary">
-                          {item.company}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Box>
-
-                  <Box
-                    sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}
-                  >
-                    {item.isReferral ? (
-                      <>
-                        <Chip
-                          icon={<Work />}
-                          label="Referral"
-                          color="primary"
-                          size="small"
-                        />
-                        <Chip
-                          icon={<CalendarToday />}
-                          label={`Deadline: ${new Date(
-                            item.deadline
-                          ).toLocaleDateString()}`}
-                          size="small"
-                        />
-                      </>
-                    ) : (
-                      <>
-                        {item.location && (
-                          <Chip
-                            icon={<LocationOn />}
-                            label={item.location}
-                            size="small"
-                          />
-                        )}
-                        {item.salary && (
-                          <Chip
-                            icon={<AttachMoney />}
-                            label={item.salary}
-                            size="small"
-                          />
-                        )}
-                      </>
-                    )}
-                  </Box>
-
-                  <Divider sx={{ my: 2 }} />
-
-                  <Typography variant="body2" color="text.secondary">
-                    {item.description?.substring(0, 150) ||
-                      item.message?.substring(0, 150)}
-                    ...
-                  </Typography>
-                </CardContent>
-                <CardActions sx={{ mt: "auto", p: 2 }}>
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    onClick={() =>
-                      item.isReferral
-                        ? navigate(`/referral/${item._id}/apply`, {
-                            state: { userProfile },
-                          })
-                        : navigate(`/user-dashboard/job-details/${item._id}`)
-                    }
-                  >
-                    {item.isReferral ? "Apply for Referral" : "View Details"}
-                  </Button>
-                </CardActions>
-              </StyledCard>
-            </Grid>
-          ))}
-        </Grid>
-
-        {totalPages > 1 && (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={(e, value) => setPage(value)}
-              color="primary"
-              size="large"
-            />
+          >
+            <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+              Job Opportunities
+            </Typography>
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              <Tooltip title="Toggle Filters">
+                <IconButton onClick={() => setShowFilters(!showFilters)}>
+                  <FilterList />
+                </IconButton>
+              </Tooltip>
+              <Tabs
+                value={tabValue}
+                onChange={handleTabChange}
+                variant="scrollable"
+                scrollButtons="auto"
+                sx={{ borderBottom: 1, borderColor: "divider" }}
+              >
+                <Tab label="All" />
+                <Tab label="Regular Jobs" />
+                <Tab label="Referral Posts" />
+              </Tabs>
+            </Box>
           </Box>
-        )}
-      </Paper>
+
+          <Collapse in={showFilters}>
+            <FilterSection sx={{ mb: 3 }}>
+              <Stack spacing={2}>
+                <TextField
+                  fullWidth
+                  label="Search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search by title or description"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Location</InputLabel>
+                      <Select
+                        name="location"
+                        value={filters.location}
+                        onChange={handleFilterChange}
+                        label="Location"
+                      >
+                        <MenuItem value="">All Locations</MenuItem>
+                        <MenuItem value="Remote">Remote</MenuItem>
+                        <MenuItem value="Hybrid">Hybrid</MenuItem>
+                        <MenuItem value="On-site">On-site</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+              </Stack>
+            </FilterSection>
+          </Collapse>
+
+          <Grid container spacing={3}>
+            {paginatedData.map((item, index) => (
+              <Grid item xs={12} md={6} key={item._id}>
+                <Zoom in={true} style={{ transitionDelay: `${index * 50}ms` }}>
+                  <StyledCard>
+                    <CardContent>
+                      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                        <CompanyAvatar>
+                          {item.isReferral ? <People /> : <Business />}
+                        </CompanyAvatar>
+                        <Box sx={{ ml: 2, flexGrow: 1 }}>
+                          <Typography variant="h6" gutterBottom>
+                            {item.isReferral ? item.jobTitle : item.title}
+                          </Typography>
+                          <Typography
+                            variant="subtitle1"
+                            color="text.secondary"
+                            gutterBottom
+                          >
+                            {item.recruiter?.companyName}
+                          </Typography>
+                          {item.company && (
+                            <Typography color="text.secondary">
+                              {item.company}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Tooltip title={savedJobs.includes(item._id) ? "Remove from saved" : "Save job"}>
+                          <IconButton
+                            onClick={() => handleSaveJob(item._id)}
+                            color={savedJobs.includes(item._id) ? "primary" : "default"}
+                          >
+                            {savedJobs.includes(item._id) ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+
+                      <Box
+                        sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}
+                      >
+                        {item.isReferral ? (
+                          <>
+                            <Chip
+                              icon={<Work />}
+                              label="Referral"
+                              color="primary"
+                              size="small"
+                            />
+                            <Chip
+                              icon={<CalendarToday />}
+                              label={`Deadline: ${new Date(
+                                item.deadline
+                              ).toLocaleDateString()}`}
+                              size="small"
+                            />
+                          </>
+                        ) : (
+                          <>
+                            {item.location && (
+                              <Chip
+                                icon={<LocationOn />}
+                                label={item.location}
+                                size="small"
+                              />
+                            )}
+                            {item.salary && (
+                              <Chip
+                                icon={<AttachMoney />}
+                                label={item.salary}
+                                size="small"
+                              />
+                            )}
+                          </>
+                        )}
+                      </Box>
+
+                      <Divider sx={{ my: 2 }} />
+
+                      <Typography variant="body2" color="text.secondary">
+                        {item.description?.substring(0, 150) ||
+                          item.message?.substring(0, 150)}
+                        ...
+                      </Typography>
+                    </CardContent>
+                    <CardActions sx={{ mt: "auto", p: 2 }}>
+                      <Button
+                        variant="contained"
+                        fullWidth
+                        onClick={() =>
+                          item.isReferral
+                            ? navigate(`/referral/${item._id}/apply`, {
+                                state: { userProfile },
+                              })
+                            : navigate(`/user-dashboard/job-details/${item._id}`)
+                        }
+                      >
+                        {item.isReferral ? "Apply for Referral" : "View Details"}
+                      </Button>
+                    </CardActions>
+                  </StyledCard>
+                </Zoom>
+              </Grid>
+            ))}
+          </Grid>
+
+          {totalPages > 1 && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(e, value) => setPage(value)}
+                color="primary"
+                size="large"
+              />
+            </Box>
+          )}
+        </Paper>
+      </Fade>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

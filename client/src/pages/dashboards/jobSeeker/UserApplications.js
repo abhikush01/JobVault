@@ -28,6 +28,14 @@ import {
   useTheme,
   useMediaQuery,
   Divider,
+  Tooltip,
+  Fade,
+  Zoom,
+  Snackbar,
+  Card,
+  CardContent,
+  Grid,
+  Avatar,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -37,15 +45,22 @@ import {
   Cancel as CancelIcon,
   AccessTime as AccessTimeIcon,
   Work as WorkIcon,
+  Refresh as RefreshIcon,
+  Download as DownloadIcon,
 } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  transition: "all 0.3s ease",
   "&:nth-of-type(odd)": {
     backgroundColor: theme.palette.action.hover,
   },
   "&:last-child td, &:last-child th": {
     border: 0,
+  },
+  "&:hover": {
+    backgroundColor: theme.palette.action.selected,
+    transform: "scale(1.01)",
   },
 }));
 
@@ -59,6 +74,18 @@ const StatusChip = styled(Chip)(({ theme, status }) => ({
       ? theme.palette.error.light
       : theme.palette.info.light,
   color: theme.palette.common.white,
+  transition: "all 0.3s ease",
+  "&:hover": {
+    transform: "scale(1.05)",
+  },
+}));
+
+const FeedbackCard = styled(Card)(({ theme }) => ({
+  transition: "all 0.3s ease",
+  "&:hover": {
+    transform: "translateY(-4px)",
+    boxShadow: theme.shadows[4],
+  },
 }));
 
 const UserApplications = () => {
@@ -76,6 +103,8 @@ const UserApplications = () => {
   });
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchApplications();
@@ -136,6 +165,59 @@ const UserApplications = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchApplications();
+      setSnackbar({
+        open: true,
+        message: "Applications refreshed successfully",
+        severity: "success"
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: "Failed to refresh applications",
+        severity: "error"
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleDownloadResume = async (applicationId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `${APP_URL}/applications/${applicationId}/resume`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: "blob",
+        }
+      );
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `resume-${applicationId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      setSnackbar({
+        open: true,
+        message: "Resume downloaded successfully",
+        severity: "success"
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: "Failed to download resume",
+        severity: "error"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Box
@@ -151,129 +233,156 @@ const UserApplications = () => {
 
   return (
     <Box sx={{ p: { xs: 2, sm: 3 } }}>
-      <Typography variant="h4" gutterBottom>
-        {filters.type === "job" ? "Job Applications" : "Referral Applications"}
-      </Typography>
+      <Fade in={true}>
+        <Paper sx={{ p: 3, mb: 3 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+            <Typography variant="h4">
+              {filters.type === "job" ? "Job Applications" : "Referral Applications"}
+            </Typography>
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Tooltip title="Refresh Applications">
+                <IconButton onClick={handleRefresh} disabled={refreshing}>
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          )}
 
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-          <TextField
-            size="small"
-            placeholder={`Search ${filters.type} applications...`}
-            value={filters.search}
-            onChange={handleFilterChange}
-            name="search"
-            InputProps={{
-              startAdornment: <SearchIcon />,
-            }}
-          />
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={filters.status}
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
+            <TextField
+              size="small"
+              placeholder={`Search ${filters.type} applications...`}
+              value={filters.search}
               onChange={handleFilterChange}
-              name="status"
-              label="Status"
-            >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="pending">Pending</MenuItem>
-              <MenuItem value="accepted">Accepted</MenuItem>
-              <MenuItem value="rejected">Rejected</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Type</InputLabel>
-            <Select
-              value={filters.type}
-              onChange={handleFilterChange}
-              name="type"
-              label="Type"
-            >
-              <MenuItem value="job">Jobs</MenuItem>
-              <MenuItem value="referral">Referrals</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-      </Paper>
+              name="search"
+              InputProps={{
+                startAdornment: <SearchIcon />,
+              }}
+            />
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={filters.status}
+                onChange={handleFilterChange}
+                name="status"
+                label="Status"
+              >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="pending">Pending</MenuItem>
+                <MenuItem value="accepted">Accepted</MenuItem>
+                <MenuItem value="rejected">Rejected</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>Type</InputLabel>
+              <Select
+                value={filters.type}
+                onChange={handleFilterChange}
+                name="type"
+                label="Type"
+              >
+                <MenuItem value="job">Jobs</MenuItem>
+                <MenuItem value="referral">Referrals</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Title</TableCell>
-              <TableCell>Company</TableCell>
-              {filters.type === "referral" && <TableCell>Referrer</TableCell>}
-              <TableCell>Status</TableCell>
-              <TableCell>Applied Date</TableCell>
-              {filters.type === "referral" && <TableCell>Deadline</TableCell>}
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {applications.map((application) => (
-              <StyledTableRow key={application._id}>
-                <TableCell>
-                  {filters.type === "job"
-                    ? application?.job?.title || "N/A"
-                    : application?.referral?.jobTitle || "N/A"}
-                </TableCell>
-                <TableCell>
-                  {filters.type === "job"
-                    ? application?.job?.recruiter?.companyName || "N/A"
-                    : application?.referral?.company || "N/A"}
-                </TableCell>
-                {filters.type === "referral" && (
-                  <TableCell>
-                    {application?.referral?.referrerName || "N/A"}
-                  </TableCell>
-                )}
-                <TableCell>
-                  <StatusChip
-                    label={
-                      filters.type === "job"
-                        ? application?.status || "N/A"
-                        : application?.referral?.status || "N/A"
-                    }
-                    status={
-                      filters.type === "job"
-                        ? application?.status || "N/A"
-                        : application?.referral?.status || "N/A"
-                    }
-                  />
-                </TableCell>
-                <TableCell>
-                  {filters.type === "job"
-                    ? new Date(application?.createdAt).toLocaleDateString()
-                    : new Date(application?.appliedDate).toLocaleDateString()}
-                </TableCell>
-                {filters.type === "referral" && (
-                  <TableCell>
-                    {application?.referral?.deadline
-                      ? new Date(
-                          application.referral.deadline
-                        ).toLocaleDateString()
-                      : "N/A"}
-                  </TableCell>
-                )}
-                <TableCell>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleViewDetails(application)}
-                  >
-                    <MessageIcon />
-                  </IconButton>
-                </TableCell>
-              </StyledTableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Title</TableCell>
+                  <TableCell>Company</TableCell>
+                  {filters.type === "referral" && <TableCell>Referrer</TableCell>}
+                  <TableCell>Status</TableCell>
+                  <TableCell>Applied Date</TableCell>
+                  {filters.type === "referral" && <TableCell>Deadline</TableCell>}
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {applications.map((application, index) => (
+                  <Zoom in={true} style={{ transitionDelay: `${index * 50}ms` }} key={application._id}>
+                    <StyledTableRow>
+                      <TableCell>
+                        {filters.type === "job"
+                          ? application?.job?.title || "N/A"
+                          : application?.referral?.jobTitle || "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        {filters.type === "job"
+                          ? application?.job?.recruiter?.companyName || "N/A"
+                          : application?.referral?.company || "N/A"}
+                      </TableCell>
+                      {filters.type === "referral" && (
+                        <TableCell>
+                          {application?.referral?.referrerName || "N/A"}
+                        </TableCell>
+                      )}
+                      <TableCell>
+                        <StatusChip
+                          label={
+                            filters.type === "job"
+                              ? application?.status || "N/A"
+                              : application?.referral?.status || "N/A"
+                          }
+                          status={
+                            filters.type === "job"
+                              ? application?.status || "N/A"
+                              : application?.referral?.status || "N/A"
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {filters.type === "job"
+                          ? new Date(application?.createdAt).toLocaleDateString()
+                          : new Date(application?.appliedDate).toLocaleDateString()}
+                      </TableCell>
+                      {filters.type === "referral" && (
+                        <TableCell>
+                          {application?.referral?.deadline
+                            ? new Date(
+                                application.referral.deadline
+                              ).toLocaleDateString()
+                            : "N/A"}
+                        </TableCell>
+                      )}
+                      <TableCell>
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                          <Tooltip title="View Details">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleViewDetails(application)}
+                            >
+                              <MessageIcon />
+                            </IconButton>
+                          </Tooltip>
+                          {application.resume && (
+                            <Tooltip title="Download Resume">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDownloadResume(application._id)}
+                              >
+                                <DownloadIcon />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Box>
+                      </TableCell>
+                    </StyledTableRow>
+                  </Zoom>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      </Fade>
 
       <Dialog
         open={detailsDialogOpen}
@@ -301,57 +410,84 @@ const UserApplications = () => {
         <DialogContent>
           {selectedApplication && (
             <Box sx={{ mt: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                {filters.type === "job"
-                  ? selectedApplication?.job?.title
-                  : selectedApplication?.referral?.jobTitle}
-              </Typography>
-              <Typography
-                variant="subtitle1"
-                color="text.secondary"
-                gutterBottom
-              >
-                {filters.type === "job"
-                  ? selectedApplication?.job?.recruiter?.companyName
-                  : selectedApplication?.referral?.company}
-              </Typography>
-
-              <Divider sx={{ my: 2 }} />
-
-              <Typography variant="h6" gutterBottom>
-                Feedback Messages
-              </Typography>
-
-              {loadingFeedback ? (
-                <Box display="flex" justifyContent="center" my={2}>
-                  <CircularProgress size={24} />
-                </Box>
-              ) : feedbackMessages.length > 0 ? (
-                feedbackMessages.map((feedback, index) => (
-                  <Paper key={index} sx={{ p: 2, mb: 2 }}>
-                    <Box
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+                    <Avatar
                       sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        mb: 1,
+                        width: 56,
+                        height: 56,
+                        bgcolor: theme.palette.primary.main,
                       }}
                     >
-                      <Typography variant="subtitle2" color="primary">
-                        Recruiter
+                      {filters.type === "job"
+                        ? selectedApplication?.job?.recruiter?.companyName?.charAt(0)
+                        : selectedApplication?.referral?.company?.charAt(0)}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h6" gutterBottom>
+                        {filters.type === "job"
+                          ? selectedApplication?.job?.title
+                          : selectedApplication?.referral?.jobTitle}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {new Date(feedback.timestamp).toLocaleString()}
+                      <Typography
+                        variant="subtitle1"
+                        color="text.secondary"
+                        gutterBottom
+                      >
+                        {filters.type === "job"
+                          ? selectedApplication?.job?.recruiter?.companyName
+                          : selectedApplication?.referral?.company}
                       </Typography>
                     </Box>
-                    <Typography variant="body1">{feedback.content}</Typography>
-                  </Paper>
-                ))
-              ) : (
-                <Typography color="text.secondary">
-                  No feedback messages available.
-                </Typography>
-              )}
+                  </Box>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    Feedback Messages
+                  </Typography>
+
+                  {loadingFeedback ? (
+                    <Box display="flex" justifyContent="center" my={2}>
+                      <CircularProgress size={24} />
+                    </Box>
+                  ) : feedbackMessages.length > 0 ? (
+                    <Grid container spacing={2}>
+                      {feedbackMessages.map((feedback, index) => (
+                        <Grid item xs={12} key={index}>
+                          <Zoom in={true} style={{ transitionDelay: `${index * 100}ms` }}>
+                            <FeedbackCard>
+                              <CardContent>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    mb: 1,
+                                  }}
+                                >
+                                  <Typography variant="subtitle2" color="primary">
+                                    Recruiter
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {new Date(feedback.timestamp).toLocaleString()}
+                                  </Typography>
+                                </Box>
+                                <Typography variant="body1">{feedback.content}</Typography>
+                              </CardContent>
+                            </FeedbackCard>
+                          </Zoom>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  ) : (
+                    <Typography color="text.secondary">
+                      No feedback messages available.
+                    </Typography>
+                  )}
+                </Grid>
+              </Grid>
             </Box>
           )}
         </DialogContent>
@@ -367,6 +503,21 @@ const UserApplications = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
